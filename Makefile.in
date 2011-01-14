@@ -1,0 +1,14 @@
+SHELL=/bin/sh
+MODULE_PATH=@prefix@/share/cadence/modules/
+MODULE_LIB=libcadence_eden.so
+
+default::eden
+
+eden::
+	cd src; make
+
+install::
+	cd scripts; make install
+	cd src; make install
+	install -d "$(MODULE_PATH)"
+	install $(MODULE_LIB) "$(MODULE_PATH)"

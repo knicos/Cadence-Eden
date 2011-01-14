@@ -1,0 +1,274 @@
+/* edensl.eden: Eden Symbol Lists */
+
+/*
+
+  Missing dependency on elements in l
+  Two versions: simulation of Eden 1.x internal, and better...
+  What would performance difference be?  Perhaps not much.
+  Range checking?
+  Test cases
+
+*/
+
+/* Can't use edensl_define("l", 4, a) as the value of a will then be passed to
+   the function, and we need the name.
+   Passing &a allows us to use the nameof() function, but then we can't
+   pass constants in as we can't have pointers to constants eg &2.
+   So we'll have to resort to passing a string in, which is parsed by
+   execute at the time of the function execution.  This doesn't make the
+   Eden language look too respectable: this obviously requires an interpreting
+   parser, and will give us problems when attempting static analysis.
+
+   Other attempts:
+     `str($1)//str(i)` is (reference to the thing pointed to by $2[i]);
+     The RHS of this is not `nameof($2[i])`: this is the current value of the
+       thing pointed to by $2[i].
+     Need an eval() as don't want dependency for ever more on the value of
+       $2[i], just its current contents.
+     `str($1)//str(i)` is eval(nameof($2[i]));  ?
+     ... but can't do this as we can't eval() local variables (see
+       change.log for 1.37 and 1.39).
+     So the execute above will have to do (a shame as this means the language
+       is not expressive enough to solve this case without resorting to a
+       re-parse).
+*/
+
+/* But isn't this all just a band-aid over a fundamentally flawed
+implementation?  +: it is enabling me to see yet more problems with
+Eden.  -: it isn't a realistic solution.  +: it should provide thesis
+material, but -: perhaps it isn't worth explaining within the thesis
+-- it is rather complex for what it is.  -: probably better off
+concentrating on a new foundation? */
+
+/* But can we write a function for m//n independent of its context?  If we
+   have l=m//n, we must be careful (and can possibly optimise) if m or n
+   are l.  If we have l is m//n, a change to a single element of m or n
+   should not require a recompute of the entire concatenation.  What if
+   a concatenation is used along with other elements?  What about the
+   different types that concatenation can take?
+ */
+
+/* !@!@ concat to do */
+## !@!@ what if m or n are l??
+proc concattol {
+  auto i;
+  for (i=1; i<=$1#; i++)
+    `"l"//str(i)` = $1[i];
+  for (i=1; i<=$2#; i++)
+    `"l"//str(i+$1#)` = $2[i];
+  ll = $1# + $2#;
+}
+
+## writeln(l);
+## -> bl_writeln("l");
+proc bl_writeln {
+  auto i;
+  write("[");
+  for (i=1; i<=`str($1)//"l"`; i++) {
+    write(`str($1)//str(i)`);
+    if (i < `str($1)//"l"`) write(",");
+  }
+  writeln("]");
+}
+
+
+
+
+wholeproc = "
+%eden0
+proc ?1_constructwhole : ?1l {
+  auto i, s;
+  s = \"%eden0\n?1 is [\";
+  for (i = 1; i <= ?1l; i++) {
+    if (i != 1) s = s // \", \";
+    s = s // \"?1\" // str(i);
+  }
+  s = s // \"];\";
+  execute(s);
+}
+";
+
+proc edensl_constructwhole {
+  para l;
+  execute(macro(wholeproc, l));
+}
+
+proc edensl_assignconstruct {
+  para l, v;
+  auto i;
+  `str(l)//"l"` = v#;
+  for (i=1; i<=v#; i++)
+    edensl_assignelement(l, i, v[i]);
+  edensl_constructwhole(l);
+}
+
+proc edensl_defineconstruct {
+  para l, sv;
+  auto i;
+  `str(l)//"l"` = sv#;
+  for (i=1; i<=sv#; i++)
+    edensl_defineelement(l, i, sv[i]);
+  edensl_constructwhole(l);
+}
+
+proc edensl_assignelement {
+  para l, i, v;
+  if (i > `str(l)//"l"`) error("index out of range");
+  `str(l)//str(i)` = v;
+}
+
+proc edensl_defineelement {
+  para l, i, sv;
+  if (i > `str(l)//"l"`) error("index out of range");
+  execute("%eden0\n"//str(l)//str(i)//" is "//sv//";");
+}
+
+proc edensl_append {
+  para l, v;
+  `str(l)//str((++`str(l)//"l"`))` = v;
+}
+
+proc edensl_delete {
+  para l, i;
+  auto j;
+  if ((i < 1) || (i > `str(l)//"l"`)) error("index out of range");
+  for (j=i; j<=`str(l)//"l"`-1; j++)
+    `str(l)//str(j)` = `str(l)//str(j+1)`;
+  `str(l)//"l"`--;
+}
+
+proc edensl_insert {
+  para l, i, v;
+  auto j;
+  if ((i < 1) || (i > `str(l)//"l"`)) error("index out of range");
+  for (j=`str(l)//"l"`; j>=i; j--)
+    `str(l)//str(j+1)` = `str(l)//str(j)`;
+  `str(l)//str(i)` = v;
+  `str(l)//"l"`++;
+}
+
+proc edensl_shift { edensl_delete($1, 1); }
+
+proc edensl_assign {
+  para l, v;
+  if (type(v) == "list")
+    edensl_assignconstruct(l, v);
+  else
+    `str(l)` = v;
+}
+
+
+
+edenslbuf = "";
+
+proc edenslTransSwitch {
+  edenslbuf = "";
+}
+
+edenSymRE = "([[:alpha:]][[:alnum:]]*)";
+listRefRE = "\\[([^]]*)\\]";
+
+func edenslTransStatement {
+  para s;
+  auto q, l;
+
+  ## l = [a, b, 42]; -> edensl_assignconstruct("l", [a, b, 42...]);
+  s = regreplace(edenSymRE // "\\s*=\\s*" // listRefRE // "\\s*;$",
+                 "edensl_assignconstruct(\"$1\", [$2]);",
+                 s);
+
+  ## l is [a, b, 42]; -> edensl_defineconstruct("l", ["a", "b", "42"...]);
+  /* !@!@ need to escape quotes etc inside the string result */
+  /* !@!@ easier to quote the entire list?  "[a, b, 42]" */
+  q = regmatch(edenSymRE // "\\s*is\\s*" // listRefRE // "\\s*;$",
+               s);
+  if (q != []) {
+    /* place quotes around elements in the list */
+    l = regmatch(listRefRE, q[1]);
+      /* !@!@ FIXED? "([^,]*)(,|$)" causes a crash here - whoops */
+    l = regreplace("\\s*([^,]*),", "\"$1\",", l[2]);
+    l = regreplace(",\\s*([^,]*)$", ",\"$1\"", l);
+
+    /* !@!@ this assumes s is only one statement */
+    /* now translate to procedure call */
+    s = "edensl_defineconstruct(\"" // q[2] // "\", [" // l // "]);";
+  }
+
+  ## l[4] = a; -> edensl_assignelement("l", 4, a);
+  s = regreplace(edenSymRE // "\\s*" // listRefRE // "\\s*=\\s*(.*);$",
+                 "edensl_assignelement(\"$1\", $2, $3);",
+                 s);
+
+  /* note this one can't be done in standard %eden */
+  /* !@!@ need to escape quotes etc inside the string result */
+  ## l[4] is a; -> edensl_defineelement("l", 4, "a");
+  s = regreplace(edenSymRE // "\\s*" // listRefRE // "\\s*is\\s*(.*);$",
+                 "edensl_defineelement(\"$1\", $2, \"$3\");",
+                 s);
+
+  ## l# -> ll
+  s = regreplace(edenSymRE // "\\s*#",
+                 "$1l",
+                 s);
+
+  ## l[i] on RHS (LHS catered for above) -> li
+  s = regreplace(edenSymRE // "\\s*" // listRefRE,
+                 "$1$2",
+                 s);
+
+  ## append l, v; -> edensl_append("l", v);
+  s = regreplace("append\\s+" // edenSymRE // ",\\s*(.*)\\s*;$",
+                 "edensl_append(\"$1\", $2);",
+                 s);
+
+  ## delete l, i; -> edensl_delete("l", i);
+  s = regreplace("delete\\s+" // edenSymRE // ",\\s*(.*)\\s*;$",
+                 "edensl_delete(\"$1\", $2);",
+                 s);
+
+  ## insert l, i, v; -> -> edensl_insert("l", i, v);
+  s = regreplace("insert\\s+" // edenSymRE // ",\\s*(.*)\\s*;$",
+                 "edensl_insert(\"$1\", $2);",
+                 s);
+
+  ## shift l; -> edensl_shift("l");
+  s = regreplace("shift\\s+" // edenSymRE // "\\s*;$",
+                 "edensl_shift(\"$1\");",
+                 s);
+
+  ## l = ... -> edensl_assign("l", ...);
+  ## "..." could be result of a func, an expression involving concatenation
+  s = regreplace(edenSymRE // "\\s*=\\s*(.*);$",
+                 "edensl_assign(\"$1\", $2);",
+                 s);
+
+  ## l is ... -> leave unchanged.  Expressions involving concatenation
+  ## etc will be handled as normal.
+
+  return s;
+}
+
+proc edenslParseChar {
+  para c;
+  auto t, q, l;
+
+  edenslbuf = edenslbuf // c;
+  if (c == ';') {
+    t = edenslTransStatement(edenslbuf);
+
+    t = "%eden0\n" // t;
+
+    if (eden_debug_notations)
+      writeln("<edensl: " // t // ">");
+    execute(t);
+
+    edenslbuf = "";
+  }
+}
+
+/* The notation name can actually be %eden, so that this translator
+   replaces the built-in Eden.  The built-in Eden would still be
+   accessible with %eden0.  Probably need to make sure that
+   execute, include etc all do a "%eden\n" before they run to make
+   sure this fully works.  Leave as %edensl for the time being. */
+newNotation("%edensl", &edenslTransSwitch, &edenslParseChar);

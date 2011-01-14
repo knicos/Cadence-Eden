@@ -1,0 +1,1369 @@
+%eden
+
+/*
+ * Ant's recompilation of the eddi parser to use aop_v210
+ * 
+ */
+
+##
+## notation.e (Eddi ant-style)
+##
+
+eddi_notation =
+  [ "\n", "eddi_statement", [] ];
+eddi_statement =
+  [ "suffix", ";", "eddi_comment",
+    [ "action",
+      [ "later", "garbage_collect();" ] ],
+    [ "fail", "eddi_comment" ] ];
+eddi_comment =
+  [ "prefix", "##",
+    [ "anything" ],
+    [ "fail", "eddi_virtualagent1" ] ];
+eddi_virtualagent1 =
+  [ "prefix", ">>",
+    [ "anything" ],
+    [ "fail", "eddi_virtualagent2" ] ];
+eddi_virtualagent2 =
+  [ "prefix", "<>",
+    [ "anything" ],
+    [ "fail", "eddi_virtualagent3" ] ];
+eddi_virtualagent3 =
+  [ "prefix", "><",
+    [ "anything" ],
+    [ "fail", "eddi_virtualagent4" ] ];
+eddi_virtualagent4 =
+  [ "prefix", "<<",
+    [ "anything" ],
+    [ "fail", "eddi_virtualagent5" ] ];
+eddi_virtualagent5 =
+  [ "prefix", ">~",
+    [ "anything" ],
+    [ "fail", "eddi_statement_0" ] ];
+eddi_statement_0 =
+  [ "prefix", "??",
+    [ "table_name" ],
+    [ "action",
+      [ "later", "describe($p1);" ] ],
+    [ "fail", "eddi_statement_1" ] ];
+eddi_statement_1 =
+  [ "prefix", "?", "rel_exp",
+    [ "action",
+      [ "later", "showrel($p1);" ],
+      [ "now", "curr_agent=1;" ] ],
+    [ "fail", "eddi_statement_2" ] ];
+rel_exp =
+  [ "pivot", "+",
+    [ "rel_exp", "rel_exp" ],
+    [ "action",
+      [ "now", "$v is \"union(\"//str($p1)//\",\"//str($p2)//\")\";" ] ],
+    [ "ignore",
+      [ "bras" ] ],
+    [ "fail", "rel_exp_1" ] ];
+rel_exp_1 =
+  [ "pivot", "-",
+    [ "rel_exp", "rel_exp" ],
+    [ "action",
+      [ "now", "$v is \"difference(\"//str($p1)//\",\"//str($p2)//\")\";" ] ],
+    [ "ignore",
+      [ "bras" ] ],
+    [ "fail", "rel_exp_2" ] ];
+rel_exp_2 =
+  [ "pivot", ".",
+    [ "rel_exp", "rel_exp" ],
+    [ "action",
+      [ "now", "$v is \"intersect(\"//str($p1)//\",\"//str($p2)//\")\";" ] ],
+    [ "ignore",
+      [ "bras" ] ],
+    [ "fail", "rel_exp_3" ] ];
+rel_exp_3 =
+  [ "rev_pivot", "%",
+    [ "rel_exp", "attr_list" ],
+    [ "action",
+      [ "now", "$v is \"project(\"//str($p1)//\",\"//str($p2)//\")\";" ] ],
+    [ "ignore",
+      [ "bras" ] ],
+    [ "fail", "rel_exp_4" ] ];
+attr_list =
+  [ "pivot", ",", ["col_naming", "attr_list"],
+    [ "action",
+      [ "now", "$v is [$p1] // $p2;" ] ],
+    [ "fail", "attr_list_2" ] ];
+attr_list_2 =
+  [ "prefix", "", "col_naming",
+    [ "action",
+      [ "now", "$v is [$p1];" ] ] ];
+col_naming =
+  [ "pivot", ">>",
+    [ "col_name", "col_name" ],
+    [ "action",
+      [ "now", "$v is [$p1, $p2];" ] ],
+    [ "fail", "col_name" ] ];
+col_name =
+  [ "literal_re", "[a-zA-Z_][a-zA-Z0-9_]*",
+    [ "action",
+      [ "now", "$v = $j;" ] ],
+    [ "fail", "error_col_name" ] ];
+error_col_name =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "writeln(\"EDDI: unrecognised column name\");" ] ] ];
+rel_exp_4 =
+  [ "rev_pivot", ":", [ "rel_exp", "predicate" ],
+    [ "action",
+      [ "now", "$v is \"restrict(\"//str($p1)//\",\\\"\"//escapequotes(str($p2))//\"\\\")\";" ] ],
+    [ "ignore",
+      [ "bras" ] ],
+    [ "fail", "rel_exp_5" ] ];
+predicate =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "$v = $j;" ] ] ];
+rel_exp_5 =
+  [ "pivot", "*", [ "rel_exp", "rel_exp" ],
+    [ "action",
+      [ "now", "$v is \"njoin(\"//str($p1)//\",\"//str($p2)//\")\";" ] ],
+    [ "ignore",
+      [ "bras" ] ],
+    [ "fail", "rel_exp_6" ] ];
+rel_exp_6 =
+  [ "prefix", "(", "rel_exp_7",
+    [ "fail", "table_val" ],
+    [ "action",
+      [ "now", "$v is $p1;" ] ] ];
+rel_exp_7 =
+  [ "suffix", ")", "rel_exp",
+    [ "action",
+      [ "now", "$v is $p1;" ] ] ];
+table_val =
+  [ "literal_re", "[a-zA-Z_][a-zA-Z0-9_]*",
+    [ "action",
+      [ "now", "if (search_CAT($j)!=0) $v is $j; else writeln(\"Invalid table reference\");" ] ],
+    [ "fail", "error_tblval" ] ];
+error_tblval =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "writeln(\"Unrecognised table value\");" ] ] ];
+eddi_statement_2 =
+  [ "prefix", "~~", "table_name",
+    [ "action",
+      [ "later", "if (($p1[1]!='_') && (search_CAT($p1)>2) && (dependants($p1)[ 1]==[])) { delrelvar($p1); delete _CATALOGUE, search_CAT($p1);} else {if (search_CAT($p1)==2) writeln (\"Can't delete the catalogue\"); else {if ((search_CAT($p1)>2) && (dependants($p1)[1]!=[])) writeln(\"Cannot delete table / view with dependants\"); else writeln(\"Table / view name is not in the catalogue\");}}" ],
+      [ "now", "curr_agent=2;" ] ],
+    [ "fail", "eddi_statement_2a" ] ];
+table_name =
+  [ "literal_re", "[a-zA-Z_][a-zA-Z0-9_]*",
+    [ "action",
+      [ "now", "$v = $j;" ] ],
+    [ "fail", "error_tblname" ] ];
+error_tblname =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "writeln(\"Unrecognised table name\");" ] ] ];
+eddi_statement_2a =
+  [ "prefix", "~", "table_name",
+    [ "action",
+      [ "later", "if (($p1[1]!='_') && (search_CAT($p1)!=0)) {if (CATALOGUE[search_CAT($p1)][2]==\"table\") $s1 = [ $s1[1] ]; else writeln(\"Can't truncate a view\");} else writeln(\"Table / view name is not in the catalogue\");" ],
+      [ "now", "curr_agent = 2;" ] ],
+    [ "fail", "eddi_statement_3" ] ];
+eddi_statement_3 =
+  [ "pivot", "<<", [ "table_name", "tuples" ],
+    [ "action",
+      [ "now", "curr_agent=3;" ],
+      [ "later", "if(istablevar($p1)) $s1 = addvals($s1, $s2); else writeln(\"Can't add tuples to a view / non-existent table\");" ] ],
+    [ "fail", "eddi_statement_4" ] ];
+tuples =
+  [ "split", ",", "tuple",
+    [ "ignore",
+      [ "sq_bras" ] ] ];
+tuple =
+  [ "prefix", "[", "tuple_1" ];
+tuple_1 =
+  [ "suffix", "]", "tuple_2" ];
+tuple_2 =
+  [ "split", ",", "tuple_3",
+    [ "ignore",
+      [ "quotes" ] ] ];
+tuple_3 =
+  [ "prefix", "\"", "tuple_5",
+    [ "fail", "float_num" ] ];
+tuple_5 =
+  [ "suffix", "\"", "stringval" ];
+stringval =
+  [ "read_all", [] ];
+eddi_statement_4 =
+  [ "pivot", "!!", [ "table_name", "tuples" ],
+    [ "action",
+      [ "now", "curr_agent=4;" ],
+      [ "later", "if(istablevar($p1)) $s1 = delvals($s1, $s2); else writeln(\"Can't delete tuples from a view / non-existent table\");" ] ],
+    [ "fail", "eddi_statement_5" ] ];
+eddi_statement_5 =
+  [ "pivot", " is ", [ "table_name", "rel_exp" ],
+    [ "ignore", ["bras"] ],
+    [ "action",
+      [ "now", "curr_agent=5;" ],
+      [ "later", "if ($p2!=@) { execute(\"$s1 is \"//$p2//\";\"); if (search_CAT($p1)!=0) _CATALOGUE = delvals(_CATALOGUE,restrict2(_CATALOGUE,\"relname\",\"==\",\"\\\"$s1\\\"\")[2]); _CATALOGUE = addvals(_CATALOGUE, [$p1, \"view\", $j, &$s1]); } else writeln(\"Invalid definition\");" ] ],
+    [ "fail", "eddi_statement_6" ] ];
+eddi_statement_6 =
+  [ "pivot", "=",
+    [ "table_name", "rel_exp" ],
+    [ "action",
+      [ "later", "if ($p2!=@) { execute(\"$s1 = \"//$p2//\";\"); if (search_CAT($p1)!=0) _CATALOGUE = delvals(_CATALOGUE,restrict2(_CATALOGUE,\"relname\",\"==\",\"\\\"$s1\\\"\")[2]); _CATALOGUE = addvals(_CATALOGUE, [$p1, \"table\", \"\", &$s1]); } else writeln(\"Invalid assignment\");" ],
+      [ "now", "curr_agent=6;" ] ],
+    [ "fail", "eddi_statement_7" ] ];
+eddi_statement_7 =
+  [ "pivot", "(",
+    [ "table_name", "create_state" ],
+    [ "action",
+      [ "later", "if (search_CAT($p1)==0) { execute(\"$s1=create(\"//$p2//\");\"); _CATALOGUE = addvals (_CATALOGUE, [$p1, \"table\", \"\", &$s1]); } else writeln(\"Table name already in use\");" ],
+      [ "now", "curr_agent=7;" ] ],
+    [ "fail", "eddi_statement_8" ] ];
+create_state =
+  [ "suffix", ")", "create_state_1",
+    [ "action",
+      [ "now", "$v is convertcols($p1);" ] ],
+    [ "fail", "error_create_state" ] ];
+create_state_1 =
+  [ "pivot", ",", ["col_info", "create_state_1"],
+    [ "action",
+      [ "now", "$v is [$p1] // $p2;" ] ],
+    [ "fail", "create_state_2" ] ];
+create_state_2 =
+  [ "prefix", "", "col_info",
+    [ "action",
+      [ "now", "$v is [$p1];" ] ] ];
+col_info =
+  [ "pivot", " ",
+    [ "col_name", "col_info_2" ],
+    [ "action",
+      [ "now", "$v is [$p1, $p2];" ] ],
+    [ "fail", "error_col_info" ] ];
+col_info_2 =
+  [ "suffix", "key", "anything",
+    [ "action",
+      [ "now", "$v = \"#\";" ] ],
+    [ "fail", "col_info_3" ] ];
+col_info_3 =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "$v = $j;" ] ] ];
+error_col_info =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "writeln(\"EDDI: unrecognised column for projection\");" ] ] ];
+error_create_state =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "writeln(\"EDDI: unrecognised tuple list in table create\");" ] ] ];
+eddi_statement_8 =
+  [ "literal", "#",
+    [ "action",
+      [ "now", "curr_agent = 8; showrel(\"CATALOGUE\");" ] ],
+    [ "fail", "error_unrecog" ] ];
+error_unrecog =
+  [ "read_all", [],
+    [ "action",
+      [ "now", "writeln(\"EDDI: unrecognised EDDI statement\");" ] ] ];
+
+quotes=[["\"", "\""], ["quotes"]];
+addblocks("quotes");
+
+installAOP("%eddi","eddi_notation");
+
+
+##
+## Original eddi script (with over-written definitions removed)
+##
+
+func convertcols {
+    para inlist;
+    auto outstr, i;
+
+    if (inlist# < 1)
+        return "";
+
+    outstr = "\"" // inlist [1][1] // "\", \"" // inlist [1][2] // "\"";
+
+    for (i = 2; i <= inlist#; i++)
+        outstr = outstr // ", \"" // inlist [i][1] // "\", \"" // inlist [i][2] // "\"";
+
+    return outstr;
+}
+
+proc garbage_collect {
+/* ## no need to garbage collect now
+	auto i, j, dCAT;
+	for (i=2; i<=CATALOGUE#; i++) {
+		dCAT = dependants(CATALOGUE[i][1]);
+	 	/* writeln("i = ", i); writeln(dCAT); writeln((dCAT[2])#); */
+		for (j=1; j<=dCAT[2]#; j++) {
+			/* writeln(dependants(dCAT[2][j])); */
+			if ((dependants(dCAT[2][j])[1])==[]) {
+				/* writeln(dCAT[2][j]); */
+				/* this line changed on WMB's request 14 January 2004 [Ash] */
+				if (substr(dCAT[2][j], 1, 4) == "var_") self_asgn(dCAT[2][j]);
+			}
+		}
+	}
+*/
+}
+
+
+##
+## Original file neweddipf.e (length 10034, dated Oct 23 2001) follows...
+##
+
+%eden
+/*
+	File:		eddipf.e
+	Program: 	EDEN functions for EDDI/P
+	Date:		6/2/96
+	Author:		Son V Truong
+*/
+
+/* Generally messed around with since by Ashley and Meurig */
+/* Added some checking to the input of functions - Michael */
+/*  */
+
+/* Make a version of a table with no repeated rows */
+func Makedistinct {
+	para l;
+	auto result, elt, ix;
+	result = [];
+	while (l#!=0) {
+		elt = l[1];
+		shift l;
+		ix = 1;
+		while ((ix<=result#)&&(elt!=result[ix])) ix++;
+		if (result#<ix) result = result // [elt];
+	}
+	return result;
+};
+
+func DummyDistinct {
+	para l;
+	return l;
+}
+
+EDDI_distinct = 1;
+makedistinct is ((EDDI_distinct) ? Makedistinct : DummyDistinct);
+
+proc markFunctionsWhenGlobalStateChanges : EDDI_distinct {
+  touch(&union, &difference, &intersect, &project, &restrict, &rdupcols);
+}
+
+func create {
+        auto i, tlist;
+        tlist = [[[]]];
+        for (i=1; i<=$#; i+=2)
+        {
+                append tlist[1],$[i];
+                if (($[i+1] == "CHAR")||($[i+1] == "char"))
+                        append tlist[1][1],"string";
+                else if (($[i+1] == "REAL")||($[i+1] == "real"))
+                        append tlist[1][1],"float";
+                else if (($[i+1] == "INT")||($[i+1] == "int"))
+                        append tlist[1][1],"int";
+                else if (($[i+1] == "POINTER")||($[i+1] == "pointer"))
+                        append tlist[1][1],"pointer";
+                else { writeln("Unrecognised type - defaults to int");
+				append tlist[1][1], "int";}
+        }
+        return tlist;
+}
+
+func ucompat
+/* bool = ucompat(t1,t2) */
+{
+	return ($1[1][1] == $2[1][1]);
+}
+
+func notin
+/* bool = notin(t,v) */
+{
+	auto i,j;
+	for (i=1; i<=$1#; i++)
+	{
+		if ($1[i] == $2)
+			return 0;
+	}
+	return 1;
+}
+
+func addvals
+/* table2 = addvals(t1,tup1,tup2,...,tupN) */
+{
+	auto i;
+	
+	if ($#<1)
+	{
+		writeln("EDEN: ERROR: table not provided for addvals.");
+		return @;
+	} else if ($1==@)
+	{
+		writeln("EDEN: ERROR: addvals has received an "//
+		"undefined table.");
+		return @;
+	}
+	
+        for (i=2; i<=$#; i++)
+	{
+		if ($1[1]#-1 == $[i]#)
+		{
+			if ((notin($1,$[i])==1) || EDDI_distinct==0)
+				append $1,$[i];
+			else
+				writeln("EDDI/EDEN ERROR: tuple exists already.");
+		}
+		else
+			writeln("EDEN: ERROR: incorrect number of values.");
+	}
+	return $1;
+}
+
+
+func delvals
+/* table2 = delvals(t1,v1,v2,...,vN) */
+{
+	auto i,j;
+
+	if ($#<1)
+	{
+		writeln("EDEN: ERROR: table not provided for delvals.");
+		return @;
+	} else if ($1==@)
+	{
+		writeln("EDEN: ERROR: delvals has received an "//
+		"undefined table.");
+		return @;
+	}
+	
+	for (i=2; i<=$#; i++)
+		if ($1[1]#-1 == $[i]#)
+		{
+			for (j=2; j<=$1#; j++)
+				if ($1[j] == $[i])
+					delete $1,j;
+		}
+		else
+		{
+			writeln("EDEN: ERROR: incorrect number of values.");
+			return $1;
+		}
+	return $1;
+}
+
+func union
+/* table3 = union(table1,table2) */
+{
+	auto i;
+	
+	if ($#<2)
+	{
+		writeln("EDEN: ERROR: two tables not provided for union.");
+		return @;
+	} else if (($1==@) || ($2==@))
+	{
+		writeln("EDEN: ERROR: union has received at least one "//
+		"undefined table.");
+		return @;
+	}
+	
+	if (ucompat($1,$2) != 1)
+	{
+		writeln("EDEN: ERROR: tables are not union-compatible.");
+		return @;
+	}
+	else
+	{
+		for (i=2; i<=$2#; i++)
+			append $1,$2[i];
+		return makedistinct($1);
+	}
+
+}
+
+func getkeys
+/* keys = getkeys(t) */
+{
+	auto i,j, index;
+	key = [];
+	keylist = [];
+	index = $1[1][1];
+	for (j=2; j<=$1#; j++)
+	{
+		for (i=1; i<=index#; i++)
+			if (index[i] == 1)
+				append key, $1[j][i];
+		append keylist, key;
+		key = [];
+	}
+	return keylist;
+}
+
+func difference
+/* t3 = difference(t1,t2) */
+{
+	auto i, j, k;
+	
+	if ($#<2)
+	{
+		writeln("EDEN: ERROR: two tables not provided for diff.");
+		return @;
+	} else if (($1==@) || ($2==@))
+	{
+		writeln("EDEN: ERROR: diff has received at least one "//
+		"undefined table.");
+		return @;
+	}
+
+	tlist = $1;
+	dlist = [];	
+        if (ucompat($1,$2) != 1)
+        {
+                writeln("EDEN: ERROR: tables are not union-compatible.");
+                return @;
+        }
+	else
+	{
+		for (j=2; j<=$1#; j++)
+			for (k=2; k<=$2#; k++)
+				if ($1[j] == $2[k])
+					append dlist, $1[j];
+		for(i=1;i<=dlist#;i++)
+			tlist = delvals(tlist,dlist[i]);
+		return makedistinct(tlist);
+	}
+}
+
+func intersect
+/* t3 = inter(t1,t2) */
+{
+        auto j, k, tlist;
+	
+	if ($#<2)
+	{
+		writeln("EDEN: ERROR: two tables not provided for inter.");
+		return @;
+	} else if (($1==@) || ($2==@))
+	{
+		writeln("EDEN: ERROR: inter has received at least one "//
+		"undefined table.");
+		return @;
+	}
+	
+        tlist = [];
+        if (ucompat($1,$2) != 1)
+        {
+                writeln("EDEN: ERROR: tables are not union-compatible.");
+                return @;
+        }
+	else
+	{
+		append tlist, $1[1];
+	        for (j=2; j<=$1#; j++)
+        	        for (k=2; k<=$2#; k++)
+                	        if ($1[j] == $2[k])
+                        	        append tlist, $1[j];
+	        return makedistinct(tlist);
+	}
+}
+
+func getcolumn
+/* c_number = getcolumn(t,c) */
+{
+	auto i,j;
+	j = 0;
+	for (i=2; i<=$1[1]#; i++)
+		if ($1[1][i] == $2)
+		{
+			j = i;
+			break;
+		}
+	if (j != 0)
+		return j-1;
+	else
+	{
+		writeln("EDEN: ERROR: column not found.");
+		return 0;
+	}
+}
+
+
+func getcolval
+{
+	auto i,j;
+	tlist = [];
+	for (i=2; i<=$1#; i++)
+		append tlist,$1[i][$2];
+	return tlist;
+}
+
+func rdupcols
+{
+	auto i,j,k;
+	tlist = [[[]]];
+	colnos = [2];
+	delcols = [$1[1][2]];
+	for (i=3; i<=$1[1]#; i++)
+		if (notin(delcols,$1[1][i]))
+		{
+			append colnos, i;
+			append delcols, $1[1][i];
+		}
+	for (j=1; j<=colnos#; j++)
+	{
+		append tlist[1][1], $1[1][1][colnos[j]-1];
+		append tlist[1], $1[1][colnos[j]];
+	}
+	for (k=2; k<=$1#; k++)
+	{
+		append tlist, [];
+		for (j=1; j<=colnos#; j++)
+			append tlist[k], $1[k][colnos[j]-1];
+	}
+	return makedistinct(tlist);
+}
+
+func matchcols
+/* [[mct1],[mct2]] = matchcols(t1,t2) */
+{
+	auto i,j;
+	mct1 = [];
+	mct2 = [];
+	for(i=2;i<=$1[1]#;i++)
+		for(j=2;j<=$2[1]#;j++)
+		{
+			if ($1[1][i] == $2[1][j])
+			{
+				append mct1,i;
+				append mct2,j;
+			}
+		}
+	return [mct1,mct2];
+}
+
+func njoin
+{
+	auto i,j,k,x,y,z;
+
+	if ($#<2)
+	{
+		writeln("EDEN: ERROR: two tables not provided for njoin.");
+		return @;
+	} else if (($1==@) || ($2==@))
+	{
+		writeln("EDEN: ERROR: njoin has received at least one "//
+		"undefined table.");
+		return @;
+	}
+
+        tlist1 = [];
+	vals1 = [];
+	vals2 = [];
+	nvals1 = [];
+	nvals2 = [];
+        append tlist1, $1[1];
+	matcols = matchcols($1,$2);
+	if (matcols != [[],[]])
+	{
+		for (i=1; i<=matcols[1]#; i++)
+			append vals1, getcolval($1,matcols[1][i]-1);
+		for (i=1; i<=matcols[2]#; i++)
+			append vals2, getcolval($2,matcols[2][i]-1);
+		for (j=1; j<=vals1[1]#; j++)
+		{	
+			append nvals1, [];
+			for (k=1; k<=vals1#; k++)
+				append nvals1[j], vals1[k][j];
+		}
+        	for (j=1; j<=vals2[1]#; j++)
+	        {
+	                append nvals2, [];
+        	        for (k=1; k<=vals2#; k++)
+	                        append nvals2[j], vals2[k][j];
+		}
+		attr = $1[1];
+		attr[1] = attr[1] // $2[1][1];
+		for (i=2; i<=$2[1]#; i++)
+			append attr, $2[1][i];
+		tlist = [attr];
+		z = 1;
+		for (x=1; x<=nvals1#; x++)
+			for (y=1; y<=nvals2#; y++)
+				if (nvals1[x] == nvals2[y])
+				{
+					append tlist, $1[x+1];
+					z++;
+					for (i=1; i<=$2[y+1]#; i++)
+						append tlist[z], $2[y+1][i];
+				}
+		return rdupcols(tlist);
+	}
+	else
+	{
+		attr = $1[1];
+		attr[1] = attr[1] // $2[1][1];
+		for (i=2; i<=$2[1]#; i++)
+                        append attr, $2[1][i];
+                tlist = [attr];
+		for (x=2;x<=$1#;x++)
+			for (y=2; y<=$2#; y++)
+			{
+				append tlist, ($1[x] // $2[y]);
+			}
+		return tlist;
+	}
+}
+
+
+##
+## Original file newshowrel2.e (length 4517, dated Oct 9 2001) follows...
+##
+%eden
+
+_DUMMY = [[[0],"A"],[0]];
+/* a dummy eddi relation _DUMMY (A int); _DUMMY << [1]; */
+curr_rel = _DUMMY;
+
+/* file derived from newshowrel.dev.e which contains some development stuff */
+/* Added check for a defined table to showrel(rel) - Michael  */
+
+num_tuple is curr_rel#-1;
+curr_attr is curr_rel[1][curr_index+1];
+curr_attr_value is curr_rel[curr_tuple_num+1][curr_index];
+/* curr_attr_str is (curr_rel[1][1][curr_index]==1)?curr_attr_value:ntzstr(curr_attr_value); */
+curr_attr_str is ntzstr(curr_attr_value);
+curr_attr_len is curr_attr_str#;
+
+/*  curr_attr_len is (curr_rel[1][1][curr_index]==1)?curr_attr_value#:str(curr_attr_value)#; */
+
+func ntzstr {
+        /* no trailing zeros display for real x */
+	/* this conversion function also passes strings through unmodified */
+	/* this is because of the boundary problem in the definitive environment */
+	/* whereby neither curr_tuple_num = 0 / 1 is appropriate */
+        para x;
+        auto strx, i, j, result;
+	strx = str(x);
+	j = strx#;
+	if (x==int(x)) return(str(int(x)));
+	if (x!=str(x)) {
+	        i=1;
+	        while (strx[i]!='.') i++;
+	        while ((j>i) && (strx[j]=='0')) j--;
+	};
+	result = "";
+	for (i=1; i<=j; i++) result = result // strx[i];
+        return result;
+};
+
+
+func normalise_len {
+	 para s, n;
+        auto i, result;
+        i = 0;
+	result = "";
+        while (i<n) {
+                i++;
+                if (i<=s#) result = result // s[i];
+                else result = result // ' ';
+        };
+        return result // " | ";
+};
+
+func compute_max_len {
+	/* as given by curr_index (which field) and curr_rel (which rel) */
+	auto i,result;
+	result = curr_attr#;
+	for (i=1; i<=num_tuple; i++) {
+		curr_tuple_num = i;
+		if (result < curr_attr_len) result = curr_attr_len;
+	};
+	curr_tuple_num = 1;
+	/* this assignment addresses the boundary problem in the definitive environment */
+	return result;
+};
+
+func mkdisplist_col {
+	/* assumes curr_index given and curr_rel */
+	auto i,ml,result;
+	ml = compute_max_len();
+	result = [repchar('-', ml+3)];
+	/* normalise_len introduces 3 extra characters to pad strings */
+        result = result // [normalise_len(curr_attr,ml)];
+	result = result // [repchar('-', ml+3)];
+        for (i=1; i<=num_tuple; i++) {
+                curr_tuple_num = i;
+                result = result // [normalise_len(curr_attr_str,ml)];
+        };
+	result = result // [repchar('-', ml+3)];
+        curr_tuple_num = 1;
+        /* this assignment addresses the boundary problem in the definitive environment */
+        return result;
+};
+
+num_fields is curr_rel[1][1]#;
+
+func mkdisplist_rel {
+	/* assumes a curr_rel is given */
+	auto i,result;
+	curr_index = 1;
+	result = mkdisplist_col();
+	for (i=2; i<=num_fields; i++) {
+		curr_index=i;
+		result = displayrt(result, mkdisplist_col());
+	};
+	curr_index = 1;
+	/* this assignment addresses the boundary problem in the definitive environment */
+	return result;
+};
+
+
+proc display_list
+{
+        /* display a display_list $1 */
+        auto i;
+        for (i=1; i<=$1#; i++)
+        {
+                writeln($1[i]);
+        }
+}
+
+func repchar
+{
+ /* $1=char, $2=number of repetitions */
+ auto s, i;
+ s = substr("", 1, $2);
+ for (i = 1; i <= $2; i++)
+   s[i] = $1;
+ return s;
+}
+
+func displayabove
+{
+	/* two display lists $1 and $2 -> display list for $1 above $2 */
+	auto s,i;
+	s = $1;
+	for (i=1; i<=$2#; i++) {
+		append s, $2[i];
+	}
+	return s;
+}
+
+func displayrt
+{
+	/* two display lists $1 and $2 -> display list for $1 to right of $2 */
+	auto s,i;
+	s = [];
+	for (i=1; i<=$1#; i++) {
+		append s, ($1[i] // $2[i]);
+	}
+	return s;
+}
+
+/* some instances of showrel() in action that can be used to test above in connection
+	with the fruits.eddi database */
+
+
+proc showrel {
+	para rel;
+	
+	if (rel==@)
+	{
+		writeln("EDEN: ERROR: showrel has been given an "//
+		"undefined table.");
+		return [[[]]];
+	}
+	
+	autocalc = 0;
+	/* curr_rel = rel; */
+        execute("curr_rel = " // rel // ";");
+	display_list(mkdisplist_rel());
+	
+	if (curr_rel# == 2)
+		writeln("(1 row)");
+	else
+		writeln("(" // str(curr_rel#-1) // " rows)");
+	
+	curr_rel = _DUMMY;
+	autocalc = 1;
+};
+
+
+
+##
+## Original file newselect2.e (length 2709, dated Oct 27 2001) follows...
+##
+autocalc=0;
+func restrict2
+/* t2 = restrict2(t1,c,c_op,c_val) */
+{
+	auto i,j,k,addcol,compval, constval, constelt;
+	tlist1 = [];		/* why isn't tlist auto? */
+	if ($1==@) {
+		writeln("EDEN: ERROR: select has been given an "//
+		 "undefined table.");
+		return @;
+	} else
+		if (!isinlist($2, tail($1[1]))) {
+			writeln("EDEN: ERROR: select has been given an "//
+				 "invalid attribute.");
+			return @;
+		} 
+	append tlist1, $1[1];
+	keys = getcolval($1,getcolumn($1,$2));
+	/* writeln(type($4), " ", $4); indicates types of selection */
+	constelt =((type($4) == "string") && ($4[1]== '\"'))
+					? cutquotes($4) : $4;
+	constval = [];
+	for (i=1; i<=$1#-1; i++) constval = constval // [constelt]; 
+	compval = constval;
+	/* constval is the list of constant values of type number
+		or string that is appropriate when $4 is a literal value */
+	if ((type($4) == "string") && ($4[1]!= '\"')) {
+		if (!isinlist($4, tail($1[1]))) {
+			writeln("EDEN: ERROR: select has been given an "//
+				 "invalid attribute.");
+			return @;
+		}
+		else compval = getcolval($1,getcolumn($1,$4));
+	}
+	/* compval is the list of values resulting from column selection
+		where $4 is the name of an attribute in the relation $1 */
+	switch($3)
+	{
+		case "==" :
+		{
+			for (i=1; i<=keys#; i++)
+			{
+				if (keys[i] == compval[i])
+					append tlist1,$1[i+1];
+			}
+			break;
+		}
+		case "!=" :
+		{
+			for (i=1; i<=keys#; i++)
+			{
+				if (keys[i] != compval[i])
+					append tlist1,$1[i+1];
+			}
+			break;
+		}
+		case "<" :
+		{
+			for (i=1; i<=keys#; i++)
+			{
+				if (keys[i] < compval[i])
+					append tlist1,$1[i+1];
+			}
+			break;
+		}
+		case "<=" :
+		{
+			for (i=1; i<=keys#; i++)
+			{
+				if (keys[i] <= compval[i])
+					append tlist1,$1[i+1];
+			}
+			break;
+		}
+		case ">" :
+		{
+			for (i=1; i<=keys#; i++)
+			{
+				if (keys[i] > compval[i])
+					append tlist1,$1[i+1];
+			}
+			break;
+		}
+		case ">=" :
+		{
+			for (i=1; i<=keys#; i++)
+			{
+				if (keys[i] >= compval[i])
+					append tlist1,$1[i+1];
+			}
+			break;
+		}
+		default :	writeln("EDDI/P Error: not a comparison.");
+				return(@);
+	}
+	return makedistinct(tlist1);
+}
+
+func restrict {
+	para tbl, pred;
+	auto var, op, val, i, j;
+
+	i = 1;
+
+	while (i <= pred# && (isalphanum (pred[i]) || pred[i] == ' ')) i++;
+	var = stripspace(substr (pred, 1, i - 1));
+	j = i;
+	
+	while (i <= pred# && pred[i] != ' ' && !isalphanum (pred [i]) && pred[i] != '\"') i++;
+	/* originally the terminating condition pred[i] == '\"' was omitted */
+	op = stripspace (substr (pred, j, i - 1));
+	val = converttonum (stripspace (substr (pred, i, pred#)));
+	return restrict2 (tbl, var, op, val);
+}
+autocalc=1;
+
+ 
+
+func converttonum {
+        para instr;
+        auto i, radix, sum;
+        i = instr#;
+        radix = 1;
+        sum = 0;
+
+        while ((i >= 1) && (isdigit (instr [i]))) {
+                        sum += ((instr [i] - '0') * radix);
+                        radix = radix * 10;
+		i--;
+        }
+        if (i==0) return sum;
+         if (!isdigit(instr [i]) && (instr[i]!='.')) return instr;
+        if (instr[i]=='.') sum2 = float(sum) / float(radix);
+	radix = 1;
+	i--;
+	/* 	writeln(sum2);  */
+	sum= 0;
+        while (i >= 1) {
+	if (!isdigit(instr[i])) return instr;
+                if (isdigit (instr [i])) {
+                        sum +=  ((instr [i] - '0') * radix);
+                        radix = radix * 10;
+		i--;
+                }
+
+        }
+	/*	writeln("   ", i);  */
+	return sum+sum2;
+}
+
+autocalc=1;
+
+
+##
+## Catalogue
+##
+
+_CATALOGUE=[[["string","string","string","pointer"],"relname","reltype","defn","ptr"],["CATALOGUE","view","CATALOGUE is _CATALOGUE % relname, reltype",&CATALOGUE]];
+
+func search_CAT {
+	para tablename;
+	auto cat, i, result;
+	cat = _CATALOGUE;
+	i= 1;
+	result = 0;
+	shift cat;
+	while (cat!=[]) {
+		i++;
+		if (cat[1][1] == tablename) result = i;
+		shift cat;
+	}
+	return result;
+}
+
+proc delrelvar {
+	para tablename;
+	/* name of table - as string - presumed to be in the catalogue */
+	*(_CATALOGUE[search_CAT(tablename)][4]) = @;
+}
+
+CATALOGUE is project(_CATALOGUE, ["relname","reltype"]);
+
+func size {
+	para tblname;
+	return *(_CATALOGUE[search_CAT(tblname)][4])# -1;
+}
+
+
+func typerel {
+	para tblname;
+	return tail((*(_CATALOGUE[search_CAT(tblname)][4]))[1]);
+}
+
+
+func typedom {
+	para tblname;
+	return (*(_CATALOGUE[search_CAT(tblname)][4]))[1][1];
+}
+
+
+func relvartype {
+	para tblname;
+	return _CATALOGUE[search_CAT(tblname)][2];
+}
+
+
+func viewdefn {
+	para tblname;
+	return _CATALOGUE[search_CAT(tblname)][3];
+}
+
+func searchCAT {
+	para tablename;
+	auto cat, i, result;
+	cat = CATALOGUE;
+	i= 1;
+	result = 0;
+	shift cat;
+	while (cat!=[]) {
+		i++;
+		if (cat[1][1] == tablename) result = i;
+		shift cat;
+	}
+	return result;
+}	
+
+proc describe {
+	para tblname;
+	if (searchCAT(tblname)!= 0) {
+		writeln();
+		writeln(tblname // " is a " // relvartype(tblname));
+		if (relvartype(tblname)=="view")
+			writeln("\tdefn: " // viewdefn(tblname));
+		write("\ttype: "); writeln(typedom(tblname));
+		write("\t\attr: "); writeln(typerel(tblname));
+		write("\tsize: "); writeln(size(tblname));
+		write("The list of views dependent on ", tblname, " is : ");
+		writeln(dependants(tblname)[1]);
+		writeln();
+	}
+	else writeln ("There is no table or view ", tblname);
+}
+
+func isinlist {
+	para elt, lst;
+	auto result;
+	result = 0;
+	while(lst!=[]) {
+		if (elt==lst[1]) result = 1;
+		shift lst;
+	}
+	return result;
+}
+
+func inclist {
+	para l1, l2;
+	auto result;
+	result = 1;
+	while (l2!=[]) {
+		if (!isinlist(l2[1], l1)) result = 0;
+		shift l2;
+	}
+	return result;
+}
+
+
+func extractattrs {
+	para attrlist;
+	auto result;
+	result = [];
+	while (attrlist != []) {
+		result = result // [(type(attrlist[1])=="list")?attrlist[1][1]:attrlist[1]];
+		shift attrlist;
+	}
+	return result;
+}
+
+func project {
+        auto i,j,k,attr;
+
+	/* project takes as its 2nd argument a single attribute name
+				or an (attribute name, rename) pair  */
+						 
+        /* writeln("Project called with pars ", $1, " ", $2); */
+        if ($#<1)
+        {
+                writeln("EDEN: ERROR: table not provided for project.");
+                return @;
+        } else {
+                if ($1==@)
+                {
+                        writeln("EDEN: ERROR: project has received an "//
+                        "undefined table.");
+                        return @;
+                } else	
+        	    if (!inclist(tail($1[1]), extractattrs($2))) {
+                        writeln("EDEN: ERROR: invalid attribute "//
+              	      			"in projection.");
+			return @;
+        	    }
+											
+          }
+
+        tlist = [[[]]];
+
+        /* For renaming attrs: c_list can contain [col_name,new_name] - ME*/
+        for (i=1; i<=$2#; i++)
+                if (type($2[i]) == "list")
+                {
+                        append tlist[1],$2[i][2];
+                        $2[i] = $2[i][1];
+                }
+                else
+                        append tlist[1],$2[i];
+
+        for (i=2; i<=$1#; i++)
+                append tlist,[];
+       
+	for (i=1; i<=$2#; i++)
+        {
+                addcol = getcolumn($1,$2[i]);
+                append tlist[1][1], $1[1][1][addcol];
+                for (j=2; j<=$1#; j++)
+                        append tlist[j], $1[j][addcol];
+        }
+        return makedistinct(tlist);
+}
+
+
+##
+## Original file deps.e (length 3753, dated Nov 20 2001) follows...
+##
+func dependants {
+	para tblname;
+	auto result, symbolinfo, currvar, ddcurrvar;
+	result = [[], []];
+	symbolinfo = symboldetail(tblname)[4];
+	/* writeln(symboldetail(tblname)[4]); */
+	if (symbolinfo!=[])
+		while (symbolinfo!=[]) {
+			currvar = symbolinfo[1];
+			if (search_CAT(currvar)!=0)
+				result[1] = result[1] // [currvar];
+			else result[2] = result[2] // [currvar];
+			ddcurrvar = dependants(currvar);
+			result[1] = result[1] // ddcurrvar[1];
+			result[2] = result[2] // ddcurrvar[2];
+			shift symbolinfo;
+		}
+	result[1] = Makedistinct(result[1]);
+	result[2] = Makedistinct(result[2]);
+	return result;
+}
+
+proc self_asgn {
+	para varname;
+	execute (varname // "=" // varname //";");
+}
+
+func istablevar {
+	para tblname;
+	return ((search_CAT(tblname)!=0) &&
+			(CATALOGUE[search_CAT(tblname)][2]=="table"));
+}
+
+func ucompatdom
+/* bool = ucompat(t1,t2): union compatible on domain */
+{
+	return ($1[1][1] == $2[1][1]);
+}
+
+func ucompatrel
+/* bool = ucompat(t1,t2): union compatible on attrname */
+{
+	return (tail($1[1]) == tail($2[1]));
+}
+
+/* propose to define
+	ucompat(x,y) as ucompatdom(x,y) && ucompatdom(x,y);
+*/
+
+func ucompat {
+	para x,y;
+	return ucompatdom(x,y) && ucompatrel(x,y);
+}
+
+
+##
+## this is the SQL style unnatural join that replaces natural join
+##
+
+func unnjoin
+{
+	auto i,j,k,x,y,z;
+
+	if ($#<2)
+	{
+		writeln("EDEN: ERROR: two tables not provided for njoin.");
+		return @;
+	} else if (($1==@) || ($2==@))
+	{
+		writeln("EDEN: ERROR: njoin has received at least one "//
+		"undefined table.");
+		return @;
+	}
+
+        tlist1 = [];
+	vals1 = [];
+	vals2 = [];
+	nvals1 = [];
+	nvals2 = [];
+      append tlist1, $1[1];
+	matcols = matchcols($1,$2);
+	for (i=1; i<=matcols[1]#; i++) {
+		$1[1][matcols[1][i]] =  $1[1][matcols[1][i]] // "_1";
+		$2[1][matcols[2][i]] =  $2[1][matcols[2][i]] // "_2";
+	}
+	/* writeln($1[1]); */
+	attr = $1[1];
+	attr[1] = attr[1] // $2[1][1];
+	/* writeln($2[1]); */
+	for (i=2; i<=$2[1]#; i++)
+          	append attr, $2[1][i];
+      tlist = [attr];
+	/* writeln(tlist); */
+	for (x=2;x<=$1#;x++)
+		for (y=2; y<=$2#; y++) {
+			append tlist, ($1[x] // $2[y]);
+		}
+	return tlist;
+}
+
+
+##
+## the uneddifying interface
+##
+
+func ucompatdomrel {
+	para x,y;
+	return ucompatdom(x,y) && ucompatrel(x,y);
+}
+
+distinctvals = [1,0];
+ucompatval = [ucompatdomrel, ucompatdom, ucompatrel];
+joinval = ["njoin", "unnjoin"];
+
+/* these descriptive identifiers aren't used except to initialise
+	variables temporarily, but indicate
+	the semantics of the various options for ucompatix etc
+*/
+
+CHECKDOMREL = 1;
+CHECKDOM = 2;
+CHECKREL = 3;
+
+NODUPROWS = 1;
+DUPROWS = 2;
+
+NATJOIN = 1;
+UNNATJOIN = 2;
+
+ucompatix = CHECKDOMREL;
+distinctix = NODUPROWS;
+joinix = NATJOIN;
+
+ucompat is ucompatval[ucompatix];
+EDDI_distinct is distinctvals[distinctix];
+EDDI_join is joinval[joinix];
+
+proc changejoin: joinix {
+	touch(&op_exp);
+}
+

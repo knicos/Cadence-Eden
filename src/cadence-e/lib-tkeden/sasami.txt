@@ -1,0 +1,119 @@
+------------------------- Sasami QUICK REFERENCE -----------------------------
+
+
+CONTENTS OF THIS QUICK REFERENCE:
+
+1. Controlling the Sasami window
+2. Syntax
+3. Commands
+4. Variables
+5. More information
+
+NB Syntax elements in (parentheses) are required, in [square brackets]
+are optional.  (Parentheses are used rather than the angle brackets usual
+in BNF due to problems with using angle brackets in HTML).
+
+
+-- 1. CONTROLLING THE SASAMI WINDOW ------------------------------------------
+
+Hold down a mouse button and drag the contents of the Sasami window:
+
+  Rotate about X & Y axes:
+    - left (or only) mouse button drag
+  Move camera position in XY plane:
+    - middle mouse button (no 2) drag, or
+    - hold Control key and drag with left (only?) mouse button
+  Zoom in and out on Z axis:
+    - right mouse button (no 3) drag, or
+    - hold Command/Apple/Mod1 key and drag with left (only?) mouse button
+
+
+-- 2. SYNTAX -----------------------------------------------------------------
+
+No semi-colons: line feeds are terminators
+
+# UNIX shell style one-line comments
+
+Whitespace and commas are command / parameter separators
+
+Escaping to Eden: ` (back-tick) is a one-line escape to Eden.
+
+
+-- 3. COMMANDS ---------------------------------------------------------------
+
+open_display
+close_display
+
+vertex (vertex name) (x) (y) [z]
+
+polygon (polygon name)
+poly_geom_vertex (polygon name) (vertex names)
+poly_tex_vertex (polygon name) (vertex names)
+poly_colour (polygon name) (r) (g) (b) [a]
+poly_material (polygon name) (material name)
+
+material (material name)
+material_ambient (material name) (r) (g) (b) [a]  (ambient = in darkness)
+material_diffuse (material name) (r) (g) (b) [a]  (diffuse = in normal light)
+material_specular (material name) (r) (g) (b) [a] (specular = in direct light)
+material_texture (material name) (texture name)
+
+object (object name)
+object_poly (object name) (polygon names)
+object_pos (object name) (x) (y) (z)
+object_rot (object name) (x) (y) (z)
+object_scale (object name) (x) (y) (z)
+object_delete (object name)
+
+cube (object name) (width) (height) (depth)
+cylinder (object name) (length) (radius1) (radius2) (segments)
+sphere (object name) (radius) (segments)
+primitive_material (object name) (material name)
+face_material (object name) (polygon) (material name)
+
+light (light name)
+light_pos (light name) (x) (y) (z)
+light_enabled (light name) (light state)
+light_directional (light name) (light state)
+light_attenuation (light name) (attenuation factor)
+light_ambient (light name) (r) (g) (b) [a]
+light_diffuse (light name) (r) (g) (b) [a]
+light_specular (light name) (r) (g) (b) [a]
+
+load_full_obj (name prefix) (filename)
+load_obj (name prefix) (filename) (loads only objects and materials into Eden)
+
+bgcolour (r) (g) (b)
+
+viewport (x size) (y size)
+
+
+-- 4. VARIABLES --------------------------------------------------------------
+
+sasami_viewport_xsize
+sasami_viewport_ysize
+sasami_viewport_bpp
+
+sasami_bgcolour_r
+sasami_bgcolour_g
+sasami_bgcolour_b
+
+sasami_show_axes
+
+sasami_camera_scale
+
+sasami_camera_rotthentrans
+
+sasami_camera_frustum_left
+sasami_camera_frustum_right
+sasami_camera_frustum_bottom
+sasami_camera_frustum_top
+sasami_camera_frustum_near
+sasami_camera_frustum_far
+
+sasami_camera_reset()
+
+
+-- 5. MORE INFORMATION -------------------------------------------------------
+
+See http://go.warwick.ac.uk/EDEN/ for more detail.

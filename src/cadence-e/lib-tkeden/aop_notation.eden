@@ -1,0 +1,1026 @@
+##==============================================================================
+##                      A Notation for Creating Notations
+##
+## Version 2.0                                         Charlie Care - May 2005
+##==============================================================================
+## Change log:
+##
+## Version 2.0 (May 2005):
+## Incorporates querying support and some syntax changes. Notable differences 
+## from previous versions are:
+##  The definition of notations:
+##    notation %mynotation = <firstRule> split on ";";
+##  and the definition of blocks:
+##    block bras = "(" to ")" contains [bras,string];
+##
+## Version 1.1 (March 2005):
+## First stable version
+##
+##==============================================================================
+## TODO:
+##
+## - implement ?rules;
+## - get ?obs; erroring properly if no rule or block with that name
+## - work out a way to query the observables notations,blocks and rules
+## - investigate whether comments work ok
+## - investigate seg-faults from loading calc.eden
+##==============================================================================
+
+##------------------------------------------------------------------------------
+## Preamble
+##------------------------------------------------------------------------------
+## Load the up-to-date AOP 
+/*removed for tkeden-ant
+cd("aop_v204");
+include("Run.e");
+cd("..");*/
+## The following file patches aop_v204 to allow for \ characters in the input
+##  to the parser.
+/* folded patch into v211
+include("aop_patch.eden");*/
+
+## Name of Notation:
+##  Changing this should change the name that users of tkeden see for this
+##  notation. It is used for the radio button text and also for error messages.
+AOP_notationName="%aop";
+
+##------------------------------------------------------------------------------
+## Blocks:
+##
+## These denote the chunks (or blocks) of input that parser rules can choose
+##   ignore.
+##------------------------------------------------------------------------------
+
+## Standard Parentheses - this one is already added to the parser
+bras = [ ["(", ")"], ["bras","string"] ];
+## Curly braces
+cbras = [ ["{", "}"], ["bras"] ];
+addblocks("cbras");
+## C-style comments
+comment = [ ["/*", "*/"], [] ];
+addblocks("comment");
+## Strings
+string = [ ["\"", "\""], [] ];
+addblocks("string");
+## Square brackets
+sqbras = [ ["[", "]"], [] ];
+addblocks("sqbras");
+
+##------------------------------------------------------------------------------
+## Install this parser:
+##------------------------------------------------------------------------------
+
+installAOP(AOP_notationName,"AOPparse_init");
+
+
+
+##------------------------------------------------------------------------------
+## Top-Level Rules:
+##------------------------------------------------------------------------------
+
+## Initial Rule (parse in blocks between ";") 
+AOPparse_init = [";", "AOPparse_stm", ["cbras","comment","string"]];
+
+## Statements statements by ";"
+AOPparse_stm = ["suffix", ";", "AOPparse_notationDecl",
+			[ "ignore", ["cbras","comment","string"] ],
+			[ "fail", "AOPparse_ERROR1"] ];
+
+##------------------------------------------------------------------------------
+## Definitions to declare a parser and add a notation:
+##
+## New notation are defined with the notation keyord
+##  e.g.
+##  %aop
+##  notation %newNotation = <inital_rule> split on "\n";
+##
+##  or:
+##  %aop
+##  notation %newNotation = <inital_rule> split on "\n"
+##                        : ignore [block1,block2];
+##------------------------------------------------------------------------------
+
+AOPparse_notationDecl = ["prefix", "notation", "AOPparse_notationDecl2",
+				[ "fail", "AOPparse_query"],
+				["action",
+				["later", "if ($p1[2]# == 2) {if ($p1# == 3)
+					AOPparse_addNotation($p1[1],$p1[2][2],$p1[3],[]); 
+					else
+					AOPparse_addNotation($p1[1],$p1[2][2],$p1[3],$p1[4]);};"]]];
+
+AOPparse_notationDecl2 = ["pivot", "=",
+							["AOPparse_notationName","AOPparse_notationDecl3"],
+							[ "fail", "AOPparse_ERROR1"],
+							["action",["now", "$v is [$p1] // $p2;"]]];
+
+AOPparse_notationDecl3 = ["pivot", "split on", 
+							["AOPparse_term_parserRule","AOPparse_notationDecl3a"],
+							["action",["now", "$v is $p1 // $p2;"]],
+							[ "fail", "AOPparse_ERROR1"],
+							[ "ignore", ["string","cbras"] ]];
+
+AOPparse_notationDecl3a = ["pivot", ":", 
+							["AOPparse_notationDecl4","AOPparse_notDeclIgnore"],
+							["action",
+							["now", "$v is $p1 // $p2;"]],
+							[ "fail", "AOPparse_notationDecl4"],
+							[ "ignore", ["string","cbras"] ]];
+
+AOPparse_notationDecl4 = ["prefix", "\"", "AOPparse_term_string2",
+							[ "fail", "AOPparse_ERROR1"],
+							["action",["now", "$v is [$p1];"]]];
+
+
+AOPparse_notDeclIgnore = ["prefix", "ignore", "AOPparse_ignore2",
+							["fail","AOPparse_ERROR1"],
+							["action",["now", "$v is [$p1];"]] ];
+
+## This proc. does the procedural bit to add a notation to the tkeden tool
+##  it also creates an observable where the inital rule is stored. This
+##  is placed in the "AOP_notation_" namespace. 
+proc AOPparse_addNotation {
+	para notationName, initialRule, sepChar, blocks;
+	execute("AOP_notation_" // notationName // "= [\"" // sepChar // 
+			"\",\"" // initialRule // "\","//str(blocks)//"];");
+	execute("installAOP(\"%" // notationName // "\",\"AOP_notation_" //
+			notationName // "\");");
+}
+
+##------------------------------------------------------------------------------
+## Query:
+##
+## This provides query support in %aop. Any notation that has been constructed
+##  terms with the aop v2.04 onwards will be supported by the query even if the 
+##  parser for the notation was construced in raw aop lists.
+##
+##  - At the moment there are a few edge-cases that haven't been implemented
+##
+## A few special queries are provided as well as conventional observable queries
+##  - ?notations; -- gives the current aop notations installed
+##  - ?blocks; -- gives the current aop blocks
+##  - ?symbols; -- gives the current aop notations, blocks and rules
+##  - ?%aop; -- gives information about a specific notation (e.g. %aop)
+##  - ??%aop; -- gives information about a notation and all of its rules
+##  - ?name; -- gives information about a rule or block
+##------------------------------------------------------------------------------
+
+AOPparse_query = ["prefix", "?", "AOPparse_queryBlocks",
+				[ "fail", "AOPparse_block"],
+				["action",["later", ""]]];
+
+## Query all blocks				
+AOPparse_queryBlocks = ["literal", "blocks", 
+				["fail", "AOPparse_queryNotations"],
+				["action",["now", "AOP_printBlocksQuery();"]]];
+
+## Query all notations
+AOPparse_queryNotations = ["literal", "notations", 
+				["fail", "AOPparse_querysymbols"],
+				["action",["now", "AOP_printNotationsQuery();"]]];
+
+## Query all %aop symbols
+AOPparse_querysymbols = ["literal", "symbols", 
+				["fail", "AOPparse_queryNotation"],
+				["action",["now", "AOP_printSymbols();"]]];
+				
+## Query a specific notation		
+AOPparse_queryNotation = ["prefix", "%", "AOPparse_queryNotation2",
+				[ "fail", "AOPparse_queryNotationFull"],
+				["action",["later", "AOP_printNotationQuery(\"%\"//$p1);"]]];
+
+## Query a specific notation and get all of its rule definitions recursively
+AOPparse_queryNotationFull = ["prefix", "?%", "AOPparse_queryNotation2",
+				[ "fail", "AOPparse_queryObservable"],
+				["action",["later", "AOP_printNotationRecursiveQuery(\"%\"//$p1);"]]];
+				
+								
+AOPparse_queryNotation2 = ["read_all", [],
+						 ["action",["now", "$v is $j;"]]];
+
+
+## Query a specific entity (block rule etc...)
+AOPparse_queryObservable = ["read_all", [],
+				["action",["now", "AOP_observableQuery(regreplace(\"<\",\"\",regreplace(\">\",\"\",$j)));"]]];
+ 
+## Output a query of all blocks
+proc AOP_printBlocksQuery {
+	auto i;
+	for (i=1;i<=scope_blocks#;i++) {
+		writeln("block "//scope_blocks[i]// " = "
+		//AOP_formatBlock(scope_blocks[i]));
+	}	
+}
+
+## Format block definition from eden source
+func AOP_formatBlock {
+	para name;
+	auto list;
+	list = `name`;
+	if (list[2] == []) {
+		return "\"" // list[1][1] // "\" to \"" // list[1][2] //"\";";	
+	}
+	else {
+		return "\"" // list[1][1] // "\" to \"" // list[1][2] //
+    "\" contains " // regreplace("\"","",str(list[2])) // ";";	
+	}
+}
+
+## Output a query of all notations
+proc AOP_printNotationsQuery {
+	auto i;
+	for (i=1;i<=AOP_installedNotations#;i++) {
+		writeln("notation "//AOP_installedNotations[i][1]// " = " //
+		AOP_formatNotationQuery(`AOP_installedNotations[i][2]`));
+	}	
+}
+
+## Output individual notation query
+proc AOP_printNotationQuery {
+	para notation;
+	writeln("notation "//notation// " = " //
+		AOP_formatNotationQuery(`AOP_getNotationDefinitionObservable(notation)`));
+}
+
+## Output recursive notation query
+proc AOP_printNotationRecursiveQuery {
+	para notation;
+	auto rules,i,notationDefn;
+	## get observable name of the initial notation defnintion (an eden list)
+	notationDefn = AOP_getNotationDefinitionObservable(notation);
+	## use the eden representation to produce a %aop meaningful representation
+  	writeln("notation " // notation // " = " // 
+				AOP_formatNotationQuery(`notationDefn`));
+  	## The list in notationDefn is the parser "init" rule. To recursively move
+  	##  through the parser we need the first grammar rule of the notation. This
+  	##  is the second element of this list. 
+  	## The following code is adapted from Ant Harfields "print_notation" proc.
+	rules = AOP_traverse_agent(`notationDefn`[2], []);
+	for (i=1; i<=rules#; i++) {
+    	writeln(AOP_formatParserRule(rules[i]));
+	}
+}
+
+## returns the observable containing the initial rule of a notation
+func AOP_getNotationDefinitionObservable {
+	para notation;
+	auto i;
+	for (i=1;i<=AOP_installedNotations#;i++) {
+		if (notation == AOP_installedNotations[i][1]) {
+			return AOP_installedNotations[i][2];
+		}
+	}
+}
+## Format rhs of a %aop notation definition from the eden source
+func AOP_formatNotationQuery {
+  para notationInfo;
+  auto output;
+  output = "<" // notationInfo[2] // "> split on \"" // notationInfo[1] // "\"";
+  if (notationInfo[3] != []) {
+     output = output // " : ignore " // regreplace("\"","",str(notationInfo[3]));
+  }
+  return output // ";";
+}
+
+## To query an observable it is necessary to 
+proc AOP_observableQuery {
+	para obs;
+	auto type;
+	## is obs an AOP observable, if so what kind?
+	type = AOP_getObservableType(obs);
+	if (type == "none") {
+		AOP_reportError(obs // " is not a " // AOP_notationName //
+			" observable ");
+	}
+	else if (type == "block") {
+		writeln("block " // obs //  " = " // 
+			AOP_formatBlock(obs));
+	}
+	else {
+		writeln(AOP_formatParserRule(obs));
+		
+	}
+}
+
+## Use the %aop symbol table to work out the type of an observable
+func AOP_getObservableType {
+	para obs;
+	auto i;
+	for (i=1;i<=AOP_vars#;i++) {
+		if (AOP_vars[i][1] == obs) {
+			return AOP_vars[i][2];
+		}
+	}
+	return @; ## Return @ if obs is not an AOP observable
+}
+
+## This function interprets the eden form of a parser rule and provides
+##  a representation of the rule in a %aop interpretable form.
+func AOP_formatParserRule {
+	para ruleName;
+	auto i,j,str,rule,ignore,fail,action;
+	ignore = "";
+	fail = "";
+	action = "";
+	rule = `ruleName`;
+	if (rule[1] == "prefix") {
+		if (AOP_noStringObservable(ruleName)) {
+			str = "\"" // rule[2] // "\"";
+		}
+		else {
+			str = "`" // AOP_getStringObservable(ruleName) // "`";			
+		}
+		if (type(rule[3])=="list") {
+			str = str // " <" // rule[3][1] // ">";
+		}
+		else {
+			str = str // " <" // rule[3] // ">";
+		}
+	}
+	else if (rule[1] == "suffix") {
+		if (type(rule[3])=="list") {
+			str = "<" // rule[3][1] // "> ";
+		}
+		else {
+			str = "<" // rule[3] // "> ";
+		}
+		if (AOP_noStringObservable(ruleName)) {
+			str = str // "\"" // rule[2] // "\"";
+		}
+		else {
+			str = str // "`" // AOP_getStringObservable(ruleName) // "`";
+		}
+	}
+	else if (rule[1] == "prefix_re") {
+		if (type(rule[3])=="list") {
+			str = "(" // rule[2] // ") <" // rule[3][1] // ">";
+		}
+		else {
+			str = "(" // rule[2] // ") <" // rule[3] // ">";
+		}
+	}
+	else if (rule[1] == "suffix_re") {
+		if (type(rule[3])=="list") {
+			str = "<" // rule[3][1] // "> (" // rule[2] // ")";
+		}
+		else {
+			str = "<" // rule[3] // "> (" // rule[2] // ")";
+		}
+	}
+	else if (rule[1] == "pivot") {
+		if (AOP_noStringObservable(ruleName)) {
+			str = "<" // rule[3][1] // "> \"" // rule[2] // "\" <" // rule[3][2] // ">";
+		}
+		else {
+			str = "<" // rule[3][1] // "> `" // AOP_getStringObservable(ruleName) // "` <" // rule[3][2] // ">";
+		}
+	}
+	else if (rule[1] == "literal") {
+		str = "\"" // rule[2] // "\"";
+    } 
+    else if (rule[1] == "literal_re") {
+	    str = "(" // rule[2] // ")";
+    }
+    else if (rule[1] == "read_all") {
+    	str = "*";
+	}
+	 	
+	for (i=1;i<=rule#;i++) {
+		if (rule[i]# == 2) {
+			if (rule[i][1] == "fail") {
+				fail = " |  <" // rule[i][2] //">";
+			}
+			else if (rule[i][1] == "action") {
+				action = " : do {" // rule[i][2][2] // "} " // rule[i][2][1];
+			}
+			else if (rule[i][1] == "ignore") {
+				ignore = " : ignore [";
+				for (j=1;j<rule[i][2]#;j++) {
+					ignore = ignore // rule[i][2][j] // ",";
+				}
+				ignore = ignore // rule[i][2][j] // "]";
+			}
+		}
+	}
+	return "<" // ruleName // "> = " // str // ignore // action // fail // ";";
+}
+
+## Is there an observable reference in the eden representation? 
+## This function refers to the symbol definition in eden and compares it to the
+##  value and checks for a discrepency.
+func AOP_noStringObservable {
+	para name;
+	auto formula,value;
+	formula = symboltext(name);
+	formula = substr(formula,2,formula#-1);
+	formula = regreplace("\\\\\"","\"",formula);
+	value = str(`name`);
+	return formula=="" || formula==value;
+}
+
+## If a rule contains a reference to an observable rather than a string
+##  return that observable name as a string.
+func AOP_getStringObservable {
+	para name;
+	auto formula,value,fmatch,vmatch;
+	formula = symboltext(name);
+	formula = substr(formula,2,formula#);
+	value = str(`name`);
+	fmatch = regmatch(",[@a-zA-Z0-9_-]+,",formula);
+	vmatch  = regmatch(",[\"@a-zA-Z0-9_-]+,",value);
+	if (fmatch# > 0 && fmatch# == vmatch#) {
+	  formula = regreplace(",","",fmatch[1]);
+ 		value = regreplace(",","",vmatch[1]);
+	}
+	return formula;
+}
+
+##------------------------------------------------------------------------------
+## Symbol table
+##------------------------------------------------------------------------------
+
+## Need a list containing every %aop observable. 
+AOP_vars is AOP_vars_addMeta(scope_blocks,"block");
+
+## This gets updated by the AOP_unpackNotationsList proc			
+AOP_installedNotations = [];
+
+## Build the variable AOP_installedNotations whenever the aop_notations list is updated
+proc AOP_unpackNotationsList : aop_notations {
+	auto i,output;
+	output=[];
+	for (i=1;i<=notations#;i++) {
+		if (notations[i][2] == &aopSwitch && aop_notations# >= i) {
+			output = output // [[notations[i][1], aop_notations[i]]];
+		}
+	}
+	AOP_installedNotations = output;
+}
+
+## Add meta data to a list of data
+func AOP_vars_addMeta {
+	para list,metaStr; ## a list of varNames
+	auto i,output;
+	output=[];
+	for (i=1;i<=list#;i++) {
+		output = output // [[list[i],metaStr]];
+	}
+	return output;
+}
+
+## Print out the current aop symbols. These are notations, blocks and known rules.
+##  currently rules are not printed.
+proc AOP_printSymbols {
+	auto i;
+	for (i=1;i<=AOP_installedNotations#;i++) {
+		writeln(AOP_installedNotations[i][1] // "\t notation");
+	}
+	for (i=1;i<=AOP_vars#;i++) {
+		writeln(AOP_vars[i][1] // "\t " // AOP_vars[i][2]);
+	}
+	AOP_installedNotations = output;
+}
+
+##------------------------------------------------------------------------------
+## Code to traverse parser rules from Ant Harfield:
+##
+## This code has been modified to sit within the AOP_ namespace and executes
+##  that were setting temporary values have been replaced with backticks and
+##  "auto" variables.
+##------------------------------------------------------------------------------
+
+func AOP_traverse_agent {
+  para agent_name, traversed;
+  auto i, subagents,vartmp;
+ 
+  subagents = [];
+  
+  if (type(agent_name) == "string" && agent_name != "")
+    vartmp = `agent_name`;
+  
+  if (vartmp == @) {
+    return traversed;
+  }
+  else {
+    if (vartmp# > 2) {
+        ##normal agent
+        if (AOP_hasChildren(vartmp[1])) {
+          if (type(vartmp[3]) == "list")
+            subagents = subagents // vartmp[3];
+          else
+            append subagents, vartmp[3];
+        }
+        ##look for fail clause
+        for (i=3; i<=vartmp#; i++)
+          if (type(vartmp[i]) == "list" && vartmp[i]# > 1 && vartmp[i][1] == "fail")
+            append subagents, vartmp[i][2];
+    }
+  }
+  
+  append traversed, agent_name;
+  
+  for (i=1; i<=subagents#; i++) {
+    if (! AOP_isMemberOf(subagents[i], traversed)) {
+      traversed = AOP_traverse_agent(subagents[i], traversed);
+    }
+  }
+  
+  return traversed;
+}
+
+func AOP_isMemberOf {
+  para item, list;
+  while (list != []) {
+    if (item == list[1])
+      return 1;
+    shift list;
+  }
+  return 0;
+}
+
+func AOP_hasChildren {
+  para op_name;
+  switch (op_name) {
+    case "literal":
+    case "read_all":
+    case "literal_re":
+      return 0;
+    case "pivot":
+    case "rev_pivot":
+      return 2;
+    default:
+      return 1;
+  }
+}
+
+
+
+##------------------------------------------------------------------------------
+## Blocks:
+## 
+## These rules allow %aop to be able to define blocks. While implementing this,
+##  some improvements have been made to the way blocks are added to make this
+##  task more 'definitive'.
+##
+## e.g. A redefinition of the current bras block
+##   %aop
+##   block bras = "(" to ")" contains [bras,string];
+##------------------------------------------------------------------------------
+
+AOPparse_block = ["prefix", "block", "AOPparse_block2",
+				[ "fail", "AOPparse_definition"],
+				["action",["later", 
+				"execute($p1[1]// \" is \" // AOP_transCode(str(tail($p1)))
+				// \";AOP_addBlock(\\\"\"//$p1[1]//\"\\\");\");"]]];			
+				
+AOPparse_block2 = ["pivot", "=",
+			["AOPparse_blockName","AOPparse_block2a"],
+			[ "fail", "AOPparse_ERROR1"],
+			["action",
+				["now", "$v is $p1//$p2;"]]];
+
+AOPparse_block2a = ["pivot", "contains",
+			["AOPparse_block3","AOPparse_ignore2"],
+			[ "ignore", ["string"]],
+			[ "fail", "AOPparse_block2b"],
+			["action",
+				["now", "$v is [$p1,$p2];"]]];
+
+AOPparse_block2b = ["prefix", "",
+			["AOPparse_block3"],
+			[ "fail", "AOPparse_ERROR1"],
+			["action",
+				["now", "$v is [$p1,[]];"]]];
+					
+AOPparse_block3 = ["pivot", "to",
+			["AOPparse_blockStr","AOPparse_blockStr"],
+			[ "ignore", ["string"]],
+			[ "fail", "AOPparse_ERROR1"],
+			["action",
+				["now", "$v is $p1//$p2;"]]];
+
+AOPparse_blockStr = ["prefix", "\"", "AOPparse_term_string2",
+			[ "fail", "AOPparse_blockVar"],
+			["action",
+				["now", "$v is [$p1];"]]];
+				
+AOPparse_blockVar = ["prefix", "`", "AOPparse_term_observable2",
+			[ "fail", "AOPparse_ERROR1"],
+			["action",
+				["now", "$v is [$p1];"]]];				
+				
+								
+AOPparse_blocks = ["read_all", [], ["action",["now", "$v is $j;"]]];
+
+
+## This proc. replaces Chris Brown's addblocks() proc. It is preferable to use
+##  this one so that redefinition of blocks doesn't create duplicate entries.
+proc AOP_addBlock {
+  para name;
+  if (! isInstalledBlock(name))
+    scope_blocks = scope_blocks // [name];
+}
+
+## Is a block already installed (i.e. is it in notations)
+func isInstalledBlock {
+  para name;
+  auto i;
+  ## Check through scope_blocks  
+  for (i=1;i<=scope_blocks#;i++) {
+    if (name == scope_blocks[i]) return TRUE;
+  }
+  return FALSE;
+}
+
+##------------------------------------------------------------------------------
+## Definitions to define the parser rules. One of the motivations of moving
+##  towards %aop for parser definition is to improve readability of the 
+##  parser definitions. Although this is significantly improved by the use of
+##  a proper notation rather than exposing the user to lists of lists of various
+##  parameters defined by strings; another aspect is the removal of the terms
+##  prefix, suffix, pivot etc. from the notation. For the idea that the parser
+##  rules could be defined from just the positions of terms in the definition
+##  and without having to declare the types of the different terms, I am 
+##  indebted to Karl King's suggestions.
+##
+##  Prefixes, suffixes and pivots are denoted by the position of the string
+##  the parser is matching.
+##  
+##   <a> = "str" <b>;        A prefix of "str"
+##   <a> = "str" <b>;        A suffix of "str"
+##   <a> = <b> "str" <b>;    A pivot on "str"
+##   <a> = "str";            Match the literal "str"
+##   <a> = *;                Match any string
+##
+##  As well as this, references to eden observables or to regular expressions 
+##  can be given in the rules.
+##  
+##   <a> = ([a-zA-Z]+) <b>;    A prefix of one or more alphabet characters
+##   <a> = <b> `myVar` <b>;    Pivot on the current contents of myVar
+##
+##  The rule to fail into is given by a | character
+##
+##   <a> = "hello" | <b>;      Match "Hello" or match the rule <b>
+##
+##  %eden action is given in the following way between the two curly braces:
+##
+##   <a> = "hello" : do {writeln("hello");} now; 
+##
+##  Ignore blocks are given in a similar way:
+##
+##   <a> = <b> "+" <c> : ignore [block1,block2];
+##------------------------------------------------------------------------------
+
+AOPparse_definition = ["pivot", "=", 
+			["AOPparse_term_parserRule","AOPparse_definition2"],
+			[ "fail", "AOPparse_ERROR1"],
+			["action",
+				["later", "execute(AOP_transCode(
+						$p1[1][2] // \" is \" //
+						 str($p2) // \";\"));"]]];
+
+AOPparse_definition2 = ["pivot", "|",
+			["AOPparse_rule","AOPparse_term_parserRule"],
+			[ "fail", "AOPparse_rule"],
+			[ "ignore", ["string","cbras"] ],
+			["action",
+			["later", "$v is $p1 // [[\"fail\",$p2[1][2]]];"]]];
+
+AOPparse_rule = ["pivot", ":", ["AOPparse_terms","AOPparse_actionIgnore"],
+			["action",
+				["now", "$v is $p1 // $p2;"]],
+			[ "fail", "AOPparse_terms"],
+			[ "ignore", ["string","cbras"] ]];
+
+func AOP_transCode {
+	## observables names are passed back as a string
+	##  of the form [...,"%name%",...]. This converts
+	##   ["%n%\"] -> [n]
+	para str;
+	str = regreplace("\"%","",str);
+	str = regreplace("%\"","",str);
+	
+	## return the translated eden code produced.
+	return str;	
+}
+
+
+
+
+##------------------------------------------------------------------------------
+## Actions and ignored blocks
+##------------------------------------------------------------------------------
+
+AOPparse_actionIgnore = ["pivot", ":", ["AOPparse_ignore","AOPparse_ignore"],
+				["action",
+				["now", "$v is $p1 // $p2;"]],
+				[ "fail", "AOPparse_ignore"],
+				[ "ignore", ["string"] ]];
+
+
+AOPparse_ignore = ["prefix", "ignore", "AOPparse_ignore2",
+			["fail","AOPparse_action"],
+			["action",["now", "$v is [[\"ignore\",$p1]];"]] ];
+			
+AOPparse_ignore2 = ["prefix", "[", "AOPparse_ignore3",
+			["fail","AOPparse_ERROR1"],
+			["action",["now", "$v is $p1;"]] ];
+			
+AOPparse_ignore3 = ["suffix", "]", "AOPparse_ignore4",
+			["fail","AOPparse_ERROR1"],
+			["action",["now", "$v is $p1;"]] ];
+			
+AOPparse_ignore4 = ["pivot", "," ,["AOPparse_blockName","AOPparse_ignore4"],
+				[ "fail", "AOPparse_blockName"],
+				[ "ignore", ["string"] ],
+				["action",
+				["now", "$v is $p1 // $p2;"]]];
+
+AOPparse_action = ["prefix", "do" , "AOPparse_actionNow",
+				[ "fail", "AOPparse_ERROR1"],
+				["action",
+				["now", "$v is [[\"action\",$p1]];"]]];
+
+AOPparse_actionNow = ["suffix", "now" , "AOPparse_actionBlock",
+				[ "fail", "AOPparse_actionLater"],
+				["action",
+				["now", "$v is [\"now\",$p1];"]]];
+				
+AOPparse_actionLater = ["suffix", "later" , "AOPparse_actionBlock",
+				[ "fail", "AOPparse_ERROR1"],
+				["action",
+				["now", "$v is [\"later\",$p1];"]]];
+
+
+AOPparse_actionBlock= ["prefix", "{" , "AOPparse_actionBlock2",
+				[ "fail", "AOPparse_ERROR1"],
+				["action",
+				["now", "$v is $p1;"]]];
+
+AOPparse_actionBlock2 = ["suffix", "}" , "AOPparse_actionCode",
+				[ "fail", "AOPparse_ERROR1"],
+				["action",
+				["later", "$v is $p1;"]]];
+
+AOPparse_actionCode = [ "read_all", [], 
+			["action",
+			["now", "$v=regreplace(\"\\\"\",\"\\\\\\\"\",$j);"]]];
+
+
+
+
+AOPparse_null = ["literal", "",["fail","AOPparse_ERROR1"],
+				 ["action",["now", "$v=[];"]]];
+
+##------------------------------------------------------------------------------
+## Names
+##------------------------------------------------------------------------------
+
+AOPparse_varName = [ "literal_re", "[a-zA-Z]+[a-zA-Z0-9_]*", 
+["fail", "AOPparse_nameERROR"], ["action", ["now","$v = \"`\\\"$t\\\"`\";"]] ];
+
+AOPparse_blockName = [ "literal_re", "[a-zA-Z]+[a-zA-Z0-9_]*", 
+["fail", "AOPparse_nameERROR"], ["action", ["now","$v=[\"$t\"];"]] ];
+
+
+AOPparse_nameERROR = [ "read_all", [], 
+			["action",
+				["now", "AOP_reportError(\"$t is not a valid \" 
+				// AOP_notationName // \" definition\");"]]];
+
+				
+AOPparse_notationName = ["prefix", "%" , "AOPparse_name",
+				[ "fail", "AOPparse_ERROR1"],
+				["action",
+				["now", "$v is $p1;"]]];
+								
+AOPparse_name = [ "literal_re", "[a-zA-Z]+[a-zA-Z0-9_]*", 
+["fail", "AOPparse_nameERROR"], ["action", ["now","$v=\"$t\";"]] ];
+
+
+
+##------------------------------------------------------------------------------
+## Parser Rules:
+## 
+## Allowed rules have either 1,2 or 3 terms
+##
+## Pivots have three terms. Terms 1 & 3 are <X> terms 
+##	and term 2 is an "X" `X` or [X]
+##
+## Prefix and Suffix have 2 rules:
+##   either Y <X> (prefix) or <X> Y (suffix)
+##
+## Literal has one term that is either an "X",`X` or [X]
+##
+## ReadAll has the term *
+##------------------------------------------------------------------------------
+
+AOPparse_terms = ["prefix","","AOPparse_terms1",
+			["action",
+			["later","$v = AOPparse_interpretTerms($p1);"]]];
+
+AOPparse_terms1 = ["pivot"," ",["AOPparse_term_string","AOPparse_terms2"],
+             ["fail","AOPparse_term_string"],
+             ["ignore",["string"]],
+             ["action",
+             ["now","$v is $p1 // $p2;"]]];
+
+AOPparse_terms2 = ["pivot"," ",["AOPparse_term_string",
+					"AOPparse_term_string"],
+			["fail","AOPparse_term_string"],
+			["action",["now","$v is $p1 // $p2;"]]];
+			
+## -------------------------------------------------------------------
+## The parser generates a list structure and then uses this function to
+##  determine which kind of aop rule (pivot, prefix, prefix_re etc.)
+##  needs to be generated.
+## -------------------------------------------------------------------
+
+func AOPparse_interpretTerms {
+	para terms;
+	auto n;
+	n = terms#;
+	if (n == 3) { ## Terms must be a pivot
+		if (terms[1][1] == "rule" && terms[3][1] == "rule" 
+			&& (terms[2][1] == "string" || 
+				 terms[2][1] == "observable")) {
+			return(["pivot",terms[2][2],
+					[terms[1][2],terms[3][2]]]);
+		} else {
+			AOP_reportError("Expecting:\n\t rule pattern rule\n 
+			Got:\n\t " //
+			terms[1][1] //" "//
+			terms[2][1] //" "//
+			terms[3][1] //" ");
+		}
+	}
+	else if (n == 2) { ## Terms must be a prefix or suffix
+		if (terms[2][1] == "rule"
+			&& (terms[1][1] == "string" || 
+				 terms[1][1] == "regexp" ||
+				 terms[1][1] == "observable")) {
+			if (terms[1][1] == "regexp") {
+				return(["prefix_re",terms[1][2],terms[2][2]]);
+			} else {
+				return(["prefix",terms[1][2],terms[2][2]]);
+			}
+		} else if (terms[1][1] == "rule"
+			&& (terms[2][1] == "string" || 
+				 terms[2][1] == "regexp" ||
+				 terms[2][1] == "observable")) {
+			if (terms[2][1] == "regexp") {
+				return(["suffix_re",terms[2][2],terms[1][2]]);
+			} else {
+				return(["suffix",terms[2][2],terms[1][2]]);
+			}
+		} else {
+			AOP_reportError("Expecting:\n\t rule pattern\n"//
+			"Or:\n\t pattern rule\nGot:\n\t " //
+			terms[1][1] //" "//
+			terms[2][1] //" ");
+		}
+	}
+	else if (n == 1) { ## Terms must be a literal or *
+
+		if (terms[1][1] == "string" || 
+			terms[1][1] == "regexp" ||
+			terms[1][1] == "observable") {
+			if (terms[1][1] == "regexp") {
+				return(["literal_re",terms[1][2]]);
+			} else {
+				return(["literal",terms[1][2]]);
+			}
+		} else if (terms[1][1] == "readAll") {
+			return(["read_all",[]]);	 
+		} else {
+			AOP_reportError("Expecting:\n\t pattern\n"//
+			"Got:\n\t " //
+			terms[1][1]);
+		}
+	}
+}
+
+##------------------------------------------------------------------------------
+## Parser Terms:
+##
+## In %aop a lot of meaning is infered through the symbols used to define a
+##  parser rule. The following section matches the various terms used in a
+##  rule.
+##
+##    <X> is the parser rule X
+##    "X" is the string X
+##    `X` is the value of the eden observable X
+##    (X) is the regular expression X
+##     *  is read all
+##
+##------------------------------------------------------------------------------
+
+## -------------------------------------------------------------------
+## An string is designated by a "X" notation
+## -------------------------------------------------------------------
+
+AOPparse_term_string = ["prefix","\"","AOPparse_term_string2",
+			["fail","AOPparse_term_observable"],
+			["action", ["later","$v is [[\"string\",$p1]];"]]];
+			
+AOPparse_term_string2 = ["suffix","\"","AOPparse_stringText",
+			["fail","AOPparse_term_stringErr"],
+			["action", ["now","$v is $p1;"]]];
+
+AOPparse_term_stringErr = [ "read_all", [], ["action",
+				["now", "AOP_reportError(\"Expecting a \\\"\");"]]];
+
+AOPparse_stringText = [ "read_all", [], 
+			["action",["now", "$v=regreplace(\"\\\\\\\\\\\\\\\\\",\"\\\\\",$j);"]]];
+			
+## -------------------------------------------------------------------
+## An eden obervable is designated by a `X` notation
+## -------------------------------------------------------------------
+
+AOPparse_term_observable = ["prefix","`","AOPparse_term_observable2",
+			["fail","AOPparse_term_regexp"],
+			["action", ["now","$v is [[\"observable\",$p1]];"]]];
+			
+AOPparse_term_observable2 = ["suffix","`","AOPparse_term_observableName",
+			["fail","AOPparse_term_observable2Err"],
+			["action", ["now","$v is $p1;"]]];
+
+AOPparse_term_observableErr = [ "read_all", [], ["action",
+				["now", "AOP_reportError(\"Expecting a `\");"]]];
+		
+AOPparse_term_observableName = [ "literal_re", "[a-zA-Z]+[a-zA-Z0-9_]*", 
+["fail", "AOPparse_nameERROR"], ["action", ["now","$v is \"%$t%\";"]] ];
+
+## -------------------------------------------------------------------
+## An regexp is designated by a (X) notation
+## -------------------------------------------------------------------
+
+AOPparse_term_regexp = ["prefix","(","AOPparse_term_regexp2",
+			["fail","AOPparse_term_readAll"],
+			["action", ["now","$v is [[\"regexp\",$p1]];"]]];
+			
+AOPparse_term_regexp2 = ["suffix",")","AOPparse_stringText",
+			["fail","AOPparse_term_regexpErr"],
+			["action", ["now","$v is $p1;"]]];
+
+AOPparse_term_regexpErr = [ "read_all", [], ["action",
+				["now", "AOP_reportError(\"Expecting a ]\");"]]];
+
+AOPparse_term_error = [ "read_all", [], ["action",
+				["now", "AOP_reportError(\"Expecting a term\");"]]];
+
+## -------------------------------------------------------------------
+## An readall is designated by a *
+## -------------------------------------------------------------------
+
+AOPparse_term_readAll = ["literal","*",
+				["fail","AOPparse_term_parserRule"],
+				["action",
+				["now","$v is [[\"readAll\",\"*\"]];"]]];
+
+## -------------------------------------------------------------------
+## A Parser Rule is designated by a <X> notation
+## -------------------------------------------------------------------
+
+AOPparse_term_parserRule = ["prefix","<","AOPparse_term_parserRule2",
+			["fail","AOPparse_term_error"],
+			["action", ["now","$v is [[\"rule\",$p1]];"]]];
+			
+AOPparse_term_parserRule2 = ["suffix",">","AOPparse_name",
+			["fail","AOPparse_term_parserRuleErr"],
+			["action", ["now","$v is $p1;"]]];
+
+AOPparse_term_parserRuleErr = [ "read_all", [], ["action",
+				["now", "AOP_reportError(\"Expecting a >\");"]]];
+
+## -------------------------------------------------------------------
+## General Error for not matching a term
+## -------------------------------------------------------------------
+
+AOPparse_term_error = [ "read_all", [], ["action",
+			["now", "AOP_reportError(\"couldn't match a term\");"]]];
+
+##------------------------------------------------------------------------------
+## Error handling:
+##
+## There is a convention with current aop notations to use terminal output for
+##  error messages. This is usually because tkeden-1.51 and below puts a lot of
+##  clutter into error messages that makes writing error messages from other
+##  notations difficult. %aop writes an errors using this function, so the way
+##  it reports errors can be changed. Currently a message is written to the 
+##  terminal and error() is called to alert the user to that output.
+##------------------------------------------------------------------------------
+
+## General Error Case
+AOPparse_ERROR1 = [ "read_all", [], 
+			["action",
+				["now", "AOP_reportError($j);"]]];
+
+
+proc AOP_reportError {
+	para str;
+	## Error to terminal
+	writeln(AOP_notationName // " ERROR: ----------------------------------------------------------\n" //str);
+	writeln("----------------------------------------------------------------------");
+	## Alert tkeden of error and tell user to look at the terminal
+	error(AOP_notationName// " error: See terminal output\n\n");
+}

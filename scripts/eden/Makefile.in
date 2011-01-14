@@ -1,0 +1,8 @@
+SHELL=/bin/sh
+SCRIPT_PATH=@prefix@/share/cadence/scripts/eden
+
+SCRIPTS=eden.dasm
+
+install::
+	install -d "$(SCRIPT_PATH)"
+	install -m 644 $(SCRIPTS) "$(SCRIPT_PATH)"

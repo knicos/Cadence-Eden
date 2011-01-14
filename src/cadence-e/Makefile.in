@@ -1,0 +1,402 @@
+#
+# $Id: Makefile.in,v 1.26 2002/02/19 14:27:15 cssbz Exp $
+#
+
+SHELL=/bin/sh
+
+# configure will replace the following non-comment line with 'MAKE=make' if
+# the make utility being used does not support $(MAKE) (!).
+# The $(MAKE) macro is used to recursively call make (see the 'clean' target
+# for an example).
+@SET_MAKE@
+
+CC		= @CC@
+CPP		= g++
+CPPFLAGS	= @CPPFLAGS@
+INSTALL		= install
+LDFLAGS		= @LDFLAGS@
+TCL_LIB		= @TCL_LIB@
+TK_LIB		= @TK_LIB@
+CURSES_LIB	= @CURSES_LIB@
+CURSES_LIB_PATH	= @CURSES_LIB_PATH@
+READLINE_LIB	= @READLINE_LIB@
+LIBS		= @LIBS@
+X_PRE_LIBS	= @X_PRE_LIBS@
+X_LIBS		= @X_LIBS@
+X_EXTRA_LIBS	= @X_EXTRA_LIBS@
+AW_X_LIBS	= @AW_X_LIBS@
+DMALLOC_LIB	= @DMALLOC_LIB@
+OPENGL_LIB	= @OPENGL_LIB@
+PNG_LIB		= @PNG_LIB@
+EMBEDDEDTCLTKFRAMEWORKS	= @EMBEDDEDTCLTKFRAMEWORKS@
+ICON_OBJS = @ICON_OBJS@
+
+
+# !@!@ This still needs installation and distribution targets. Perhaps also
+# make depends.
+
+########################################################################
+
+# Add any C compiler options that *must* be used at the start of the
+# definition here, so the user is free to define CFLAGS and override
+# any of our settings
+ALLCFLAGS = $(CFLAGS)
+
+EDENOBJS = Eden/libeden.a pcre-3.9/pcre.o
+MISCOBJS = Misc/libmisc.a
+DONALDOBJS = Donald/libdonald.a
+EXOBJS = EX/libex.a
+SCOUTOBJS = Scout/libscout.a
+LSDOBJS = LSD/liblsd.a
+SASAMIOBJS = Sasami/libsasami.a
+
+TKEDENOBJS = $(EDENOBJS) $(MISCOBJS) $(DONALDOBJS) $(SASAMIOBJS) $(EXOBJS) \
+		 $(SCOUTOBJS) $(ICON_OBJS)
+DTKEDENOBJS = $(EDENOBJS) $(MISCOBJS) $(DONALDOBJS) $(SASAMIOBJS) $(EXOBJS) \
+		 $(SCOUTOBJS) $(LSDOBJS)
+TTYEDENOBJS = $(EDENOBJS) $(MISCOBJS)
+
+default:	libtkeden.a
+
+# NB action lines that start with '@' prevent make from printing the action
+# as it is performed.
+help::
+		@echo "Compiling a Cadence-DE variant:"
+		@echo "Use make cadence-de or make ttyeden."
+		@echo "Important note: do make clean between making variants."
+		@echo ""
+
+# on every build, record the working copy revision string
+# the following is modified from the Subversion FAQ at
+#   http://subversion.tigris.org/faq.html#version-value-in-source
+# FORCE is explained at
+#   http://www.gnu.org/software/make/manual/html_node/make_38.html
+# "$?" is the exit status of the last command: I am using it here to
+# detect if the svnversion command failed, and output something detectably
+# messed up to svnversion.h.
+#
+# Note below that "${NAME}" is expanded by make, and that
+# "$${NAME}" is expanded by sh (which is run by make).  The major part of
+# the rule is effectively all one line (with \ characters at the end of lines)
+# so that environment variable settings can be reused on later lines.  (make
+# invokes each separate line in a separate shell.)
+svnversion.h: FORCE
+	@SVNVER=`svnversion -n .`; \
+	  if [ "$$?" != "0" ]; then \
+	    echo "#define EDEN_SVNVERSION \"r???\"" > svnversion.h; \
+	  else \
+	    echo "#define EDEN_SVNVERSION \"r$${SVNVER}\"" > svnversion.h; \
+	  fi;
+FORCE:
+
+# tkeden uses Tcl, Tk and X but doesn't use curses
+# Note: double colon used here with no dependencies to always force these
+# actions to be performed.
+# Note: the link line must be in this order - for item A to be able to
+# reference item B, they must be specified in the order A B.
+# OPENGL_LIB must come before X_LIBS if we are to get the specified GL lib.
+libtkeden.a:: svnversion.h
+		cd Eden; VARIANT=TKEDEN $(MAKE) libeden.a
+		cd Misc; VARIANT=TKEDEN $(MAKE) libmisc.a
+		cd Donald; VARIANT=TKEDEN $(MAKE) libdonald.a
+		cd EX; VARIANT=TKEDEN $(MAKE) libex.a
+		cd Scout; VARIANT=TKEDEN $(MAKE) libscout.a
+		cd Sasami; VARIANT=TKEDEN $(MAKE) libsasami.a
+		#cd DOSTE; VARIANT=TKEDEN $(MAKE) libdoste.a
+		#ar cq ../$@ $(TKEDENOBJS)
+		#$(CPP) -o $@ $(ALLCFLAGS) $(LDFLAGS) $(TKEDENOBJS) $(TK_LIB) $(TCL_LIB) $(OPENGL_LIB) $(X_LIBS) $(X_PRE_LIBS) $(PNG_LIB) $(AW_X_LIBS) $(X_EXTRA_LIBS) $(DOSTE_LIB) $(LIBS) $(DMALLOC_LIB) nothing.c
+
+install::
+	cd lib-tkeden; make install
+
+# ttyeden uses curses and readline, but not Tcl, Tk or X
+ttyeden:: svnversion.h
+		cd Eden; VARIANT=TTYEDEN $(MAKE) libeden.a
+		cd Misc; VARIANT=TTYEDEN $(MAKE) libmisc.a
+#		cd DOSTE; VARIANT=TTYEDEN $(MAKE) libdoste.a
+		$(CC) -o $@ $(ALLCFLAGS) $(LDFLAGS) $(TTYEDENOBJS) $(CURSES_LIB_PATH) $(READLINE_LIB) $(CURSES_LIB) $(LIBS) $(DMALLOC_LIB) nothing.c
+
+DIRS = Eden Misc EX Scout Donald LSD Sasami
+
+# create the generated sources (using bison etc)...
+generate::
+		TOP=`pwd`; \
+		for DIR in $(DIRS); do cd $$TOP/$$DIR; \
+			$(MAKE) INHIBIT_DEPEND=y generate; done
+
+# clean and reallyclean do not remove the compiled executables
+# ttyeden, tkeden etc, as the new system requires the compiler to do a
+# 'make clean' between making variants.
+clean::
+		TOP=`pwd`; \
+		for DIR in $(DIRS); do cd $$TOP/$$DIR; \
+			$(MAKE) INHIBIT_DEPEND=y clean; done
+
+# reallyclean removes the generated (by bison etc) sources as well
+reallyclean::
+		TOP=`pwd`; \
+		for DIR in $(DIRS); do cd $$TOP/$$DIR; \
+			$(MAKE) INHIBIT_DEPEND=y reallyclean; done
+
+# Create a totally clean source directory that someone would want to
+# receive :).  Leave the platform-independent generated sources in,
+# though (so the receiver doesn't have to have bison etc).
+# NB action lines that start with '-' cause make to ignore any errors
+# resulting from the action.
+maintainerclean::
+		TOP=`pwd`; \
+		for DIR in $(DIRS); do cd $$TOP/$$DIR; \
+			$(MAKE) INHIBIT_DEPEND=y clean; rm Makefile; done
+		-rm -r tkeden ttyeden dtkeden tkeden.exe dtkeden.exe \
+			config.cache config.log \
+			config.status config.h cscope.out Makefile \
+			core Windist eden-* generic.mk */cscope.out \
+			*~ */*~ */*.d */TAGS
+		@echo ""
+		@echo "Suggest you check the list in MAKING.A.RELEASE"
+		@echo ""
+
+# Make all the .d (dependency) files.  TKEDEN is the most common case:
+# avoiding using DISTRIB as it causes problems if making tkeden.
+depend::
+		TOP=`pwd`; \
+		for DIR in $(DIRS); do cd $$TOP/$$DIR; \
+			VARIANT=TKEDEN $(MAKE) INHIBIT_DEPEND=y depend; done
+
+# To make an application for Mac OS X, we need to make a "bundle" or
+# "package": a directory containing the binary, lib-tkeden and some
+# informational XML files.  The ProjectBuilder application can be used
+# to do this, and in fact the template tkeden.app directory which is
+# used below was created with ProjectBuilder, but I'd rather keep the
+# build process as it is on other platforms, using this Makefile.
+#
+# Including a version number with a decimal point in the name makes
+# the Finder display the .app extension (vis tkeden1.55.app vs
+# tkeden.app) and also means that hdiutil creates disk images that
+# have names up to the first dot (eg tkeden1).  I "fix" this here
+# by changing the decimal point to a hyphen... this might cause some
+# confusion, but probably best choice overall...
+#
+# This "macapp" target makes an application that will run on this machine.
+# To make an application that can be transported to another machine (eg
+# with no dependencies on shared libraries), see the "macdist" target.
+macapp::
+	@VERSION=`grep '#define TKEDEN_VERSION ' version.h | \
+		awk -F'"' '{print $$2}' | sed 's/\./-/'`; \
+	echo "Version is $${VERSION}..."; \
+	chmod -R +w "tkeden$$VERSION.app" 2>/dev/null; \
+	rm -rf "tkeden$$VERSION.app" 2>/dev/null; \
+	rm "tkeden$${VERSION}.dmg" 2>/dev/null; \
+	mkdir -p "tkeden$$VERSION.app/Contents/MacOS"; \
+	mkdir -p "tkeden$$VERSION.app/Contents/Resources/lib-tkeden"; \
+	cp -p tkeden "tkeden$$VERSION.app/Contents/MacOS/"; \
+	cp -p dtkeden "tkeden$$VERSION.app/Contents/MacOS/"; \
+	cp -p lib-tkeden/* "tkeden$$VERSION.app/Contents/Resources/lib-tkeden/"; \
+	cp -p MacOSX/tkeden.icns "tkeden$$VERSION.app/Contents/Resources/"; \
+	cp -p MacOSX/tkeden.app/Contents/PkgInfo "tkeden$$VERSION.app/Contents/"; \
+	sed -e "s/TKEDENVERSION/$$VERSION (r`svnversion -n .`)/g" \
+	  -e "s/THISYEAR/`date +%Y`/g" \
+	  MacOSX/tkeden.app/Contents/Info.plist \
+	  > "tkeden$$VERSION.app/Contents/Info.plist"; \
+	chmod -R go+rX "tkeden$$VERSION.app/"; \
+	echo "Made tkeden$$VERSION.app.";
+
+# This target produces a .dmg "Disk Image" file which can be distributed
+# to other Mac OS machines which may not have Tcl/Tk, libpng etc installed:
+# the bundle (.app directory) produced contains these shared libraries.
+# The EDEN executable must be modified from using absolute filesystem paths
+# to locate the shared libraries, to paths relative to the location of the
+# executable (pointing within the bundle).  We encapsulate the resulting
+# bundle within a flat .dmg file, and also set the "Internet Enable" bit
+# on the .dmg file, causing Safari to expand it automatically after
+# download, resulting in a one-click installation experience for the end user.
+#
+# See:
+#   "Building Stand-Alone Tcl/Tk Applications under Mac OS X"
+#     http://wiki.tcl.tk/12945
+# and
+#   tk8.4.9/macosx/README in the Tk source distribution (which mentions
+#     embedded Frameworks)
+# and
+#   "Distributing Software With Internet-Enabled Disk Images"
+#     http://developer.apple.com/documentation/DeveloperTools/Conceptual/
+#       SoftwareDistribution/Concepts/sd_disk_images.html
+#
+# A possible extension to this rule would set a software license
+# agreement (SLA) property in the disk image.  See the software development
+# kit (SDK) "Software License Agreements for UDIFs" available at
+#   http://developer.apple.com/sdk/index.html
+#
+# Note in the rules below that "${NAME}" is expanded by make, and that
+# "$${NAME}" is expanded by sh (which is run by make).  The major part of
+# the rule is effectively all one line (with \ characters at the end of lines)
+# so that environment variable settings can be reused on later lines.  (make
+# invokes each separate line in a separate shell.)
+#
+# NB You must run "make macapp" before running this target.  Don't run this
+# target twice in a row without "make macapp" in between, since this target
+# cannot cope with the output from otool -L after it has been modified.
+macdist::
+	@# Check location specified
+	@if [ "X${EMBEDDEDTCLTKFRAMEWORKS}" = "X" ]; then \
+		echo "It seems you haven't specified the location for 'embedded' versions of the Tcl/Tk Frameworks using the configure --with-embedded-tcl-tk-frameworks option.  Can't continue."; \
+		exit 1; \
+	fi;
+
+	@# Check location specified was called Frameworks
+	@ETTFBACKSLASHED=`bash -c 'printf "%q\n" "${EMBEDDEDTCLTKFRAMEWORKS}"'`; \
+	if [ `basename "$${ETTFBACKSLASHED}"` != Frameworks ]; then \
+		echo "The location specified with the configure --with-embedded-tcl-tk-frameworks option does not specify a directory named 'Frameworks'.  Can't continue."; \
+		exit 1; \
+	fi;
+
+	@# NB the following code needs to be all one long line (with \ characters at
+	@# end of each line): I think comments cannot be inserted.
+	@# NB:
+	@# - substituting hyphen for decimal point in VERSION name (see "macapp")
+	@# - using ditto rather than cp -rp to copy the Tcl/Tk Frameworks folder,
+	@#   since symbolic links need to be preserved.
+	@# - Tcl/Tk Frameworks folder isn't writable (at least, in my compile),
+	@#   making it difficult to remove the tkeden app later on with rm -rf,
+	@#   so giving it write permissions.
+	@# - otool -L shows the current file paths used for loading shared
+	@#   libraries.
+	@#   install_name_tool is used to change these paths.  My sed hackery below
+	@#   pulls out (eg) the current path to Tcl output by otool, so this
+	@#   can be provided to install_name_tool as the old name.  The sed works
+	@#   thus:
+	@#
+	@# sed -n 's/\(^[^/]*\(\/[^(]*Tcl\) .*$\)/\2/p'
+	@#
+	@# means, for each line of input:
+	@# 
+	@# find
+	@# \(
+	@# 	^ -- beginning of line, followed by
+	@# 	[^/]* -- zero-or-more characters that are not '/', followed by
+	@# 	\(
+	@# 		\/ -- the character '/', followed by
+	@# 		[^(]* -- zero-or-more characters that are not '(', followed by
+	@# 		Tcl -- the string 'Tcl', followed by
+	@# 	\)
+	@# 	a space character, followed by
+	@# 	.*$ -- zero-or-more characters to end of line
+	@# \)
+	@# for an expression located within the first (outer) parentheses (NB which
+	@# were escaped, thus '\('),
+	@# substitute the expression (denoted by '\2') located within the second
+	@# (inner) parentheses,
+	@# print the result (note that the -n option instructs sed not to print
+	@# the result if no matches are found).
+	@#
+	@# The sed pattern for libpng is slightly adjusted to cope with the fact
+	@# that libpng is probably followed by other text (currently the full name
+	@# is libpng.3.dylib).
+	@#
+	@# "hdiutil create -srcfolder" creates a UDIF read-only compressed disk
+	@# image (format UDZO).  This variant of the hdiutil command apparently
+	@# requires Mac OS X 10.3.
+	@#
+	@VERSION=`grep '#define TKEDEN_VERSION ' version.h | \
+		awk -F'"' '{print $$2}' | sed 's/\./-/'`; \
+	echo "Version is $${VERSION}..."; \
+	rm "tkeden$${VERSION}.dmg" 2>/dev/null; \
+	ditto "${EMBEDDEDTCLTKFRAMEWORKS}" \
+	  "tkeden$${VERSION}.app/Contents/Frameworks"; \
+	chmod -R +w "tkeden$${VERSION}.app/Contents/Frameworks"; \
+	EXISTTCLLIB=`otool -L "tkeden$${VERSION}.app/Contents/MacOS/tkeden" | \
+		sed -n 's/\(^[^/]*\(\/[^(]*Tcl\) .*$$\)/\2/p'`; \
+	EXISTTKLIB=`otool -L "tkeden$${VERSION}.app/Contents/MacOS/tkeden" | \
+		sed -n 's/\(^[^/]*\(\/[^(]*Tk\) .*$$\)/\2/p'`; \
+	echo "Changing $${EXISTTCLLIB}..."; \
+	install_name_tool -change \
+		"$${EXISTTCLLIB}" \
+		"@executable_path/../Frameworks/Tcl.framework/Tcl" \
+		"tkeden$${VERSION}.app/Contents/MacOS/tkeden"; \
+	echo "Changing $${EXISTTKLIB}..."; \
+	install_name_tool -change \
+		$${EXISTTKLIB} \
+		"@executable_path/../Frameworks/Tk.framework/Tk" \
+		"tkeden$${VERSION}.app/Contents/MacOS/tkeden"; \
+	EXISTPNGLIB=`otool -L "tkeden$${VERSION}.app/Contents/MacOS/tkeden" | \
+		sed -n 's/\(^[^/]*\(\/[^(]*libpng[^(]*\) .*$$\)/\2/p'`; \
+	echo "Changing $${EXISTPNGLIB}..."; \
+	cp -p "$${EXISTPNGLIB}" "tkeden$${VERSION}.app/Contents/Frameworks" ; \
+	install_name_tool -change \
+		"$${EXISTPNGLIB}" \
+		"@executable_path/../Frameworks/`basename $${EXISTPNGLIB}`" \
+		"tkeden$${VERSION}.app/Contents/MacOS/tkeden"; \
+	echo "Making tkeden$${VERSION}.dmg..."; \
+	hdiutil create -srcfolder "tkeden$${VERSION}.app" "tkeden$${VERSION}.dmg"; \
+	echo "Setting internet-enable bit on disk image..."; \
+	hdiutil internet-enable -yes "tkeden$${VERSION}.dmg"; \
+	echo ""; \
+	echo "!! Opening the disk image will reset the internet-enable bit: if this is for distribution, upload the disk image to the Internet before opening it to test.";
+
+
+# Re-generate each Makefile from its Makefile.in, as long as configure has
+# been run.
+make::
+		./config.status
+
+
+#			/cygdrive/c/cygwin/bin/cygncurses5.dll \
+#			/cygdrive/c/cygwin/bin/cygreadline4.dll \
+#			lib-tkeden tkeden.exe ttyeden.exe dtkeden.exe Windist
+
+# Make a directory with just the files required for a Windows binary
+# distribution.
+# NB
+# - Use 'cygcheck tkeden.exe' to find which DLLs to copy.
+#   ... NB unfortunately this doesn't seem to work any more -- cygcheck
+#       output is empty, whatever the options?? [Ash, 8 June 2005]
+# - Give locations in /bin rather than /cygdrive/c/cygwin/bin to avoid
+#   problems with installations of cygwin in places other than c:
+# - Could possibly 'strip Windist/tkeden.exe' and other binaries to remove
+#   debugging symbols and reduce executable size, but then again, we're over
+#   a floppy disk in size even after stripping, so probably not worth it...
+winapp::
+		rm -rf Windist
+		mkdir -p Windist/share/tcl8.4 Windist/Docs
+		cp -R /bin/cygwin1.dll \
+			/bin/cygpng12.dll \
+			/bin/cygz.dll \
+			/bin/tcl84.dll \
+			/bin/tk84.dll \
+			/bin/cygncurses-8.dll \
+			/bin/cygreadline6.dll \
+			lib-tkeden tkeden.exe Windist
+		-cp ttyeden.exe Windist
+		-cp dtkeden.exe Windist
+		cp /usr/share/tcl8.4/init.tcl Windist/share/tcl8.4
+		cp /usr/share/tcl8.4/word.tcl Windist/share/tcl8.4
+		cp /usr/share/tcl8.4/tclIndex Windist/share/tcl8.4
+		cp /usr/share/tcl8.4/auto.tcl Windist/share/tcl8.4
+		cp -R /usr/share/tk8.4 Windist/share
+		./Windows/unix2dos.sh Docs/CHANGE.LOG Windist/Docs/CHANGE.LOG
+		./Windows/unix2dos.sh Docs/COPYING.TXT Windist/Docs/COPYING.TXT
+		./Windows/unix2dos.sh Docs/GPL.TXT Windist/Docs/GPL.TXT
+		./Windows/unix2dos.sh Docs/LICENSE_GLPNG.TXT Windist/Docs/LICENSE_GLPNG.TXT
+		./Windows/unix2dos.sh Docs/LICENSE_TOGL.TXT Windist/Docs/LICENSE_TOGL.TXT
+		./Windows/unix2dos.sh Docs/README.TXT Windist/Docs/README.TXT
+		./Windows/unix2dos.sh Docs/TODO Windist/Docs/TODO
+		rm -rf Windist/lib-tkeden/.svn
+		rm -rf Windist/share/tk8.4/demos
+		VERSION=`grep '#define TKEDEN_VERSION ' version.h | \
+			awk -F'"' '{print $$2}'`; \
+			rm -rf eden-$${VERSION} 2>/dev/null; \
+			rm eden-$${VERSION}.zip 2>/dev/null; \
+			mv Windist eden-$${VERSION};
+
+# Make a ZIP file of the Windows distribution.
+# NB You must run "make winapp" before running this target.
+windist::
+		VERSION=`grep '#define TKEDEN_VERSION ' version.h | \
+			awk -F'"' '{print $$2}'`; \
+			rm eden-$${VERSION}.zip; \
+			zip -T9r eden-$${VERSION}.zip eden-$${VERSION}
+
+## Make PCRE (Perl-compatible regular expressions) package, used in Eden for
+## "regmatch" and other functions
+pcre::
+		cd pcre-3.9; ./configure --disable-shared; make

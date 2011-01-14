@@ -1,0 +1,8 @@
+SHELL=/bin/sh
+SCRIPT_PATH=@prefix@/share/cadence/lib-tkeden/gel
+
+SCRIPTS=htmlextensions.e notation.e parserhooks.e run.e scoutextensions.e tclhooks.e tkhtml.dll tkhtml.html triggers.e
+
+install::
+	install -d "$(SCRIPT_PATH)"
+	install -m 644 $(SCRIPTS) "$(SCRIPT_PATH)"

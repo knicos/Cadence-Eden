@@ -1,0 +1,57 @@
+-------- AOP (Agent Oriented Parser) Notation QUICK REFERENCE ------------
+
+CONTENTS OF THIS QUICK REFERENCE:
+
+1. Parser Rules
+2. Query Support
+
+-- 1. PARSER RULES -------------------------------------------------------
+
+There are 3 basic types of parser definitions supported:
+
+...See the online documentation for better %aop documentation
+
+-- 2. QUERY SUPPORT ------------------------------------------------------
+
+%aop has extensive query support which fall into three categories:
+
+1) Special (keyword) Queries (symbol ?):
+
+?notations     - list all currently-installed aop-based notations.
+?blocks        - list all currently defined blocks.
+?symbols       - list all symbols currently known to %aop
+
+2) Ordinary (individual observable) Queries (symbol ?):
+
+?OBSERVABLE    - show %aop definition for OBSERVABLE
+
+Examples: (|> denotes output in the terminal from which tkeden was invoked)
+?%aop
+|>notation %aop = <AOPparse_stm> split on ";" 
+|>              : ignore [cbras,comment,string];
+
+?bras;
+|> block cbras = "{" to "}" contains [bras];
+
+?AOPparse_stm;
+|> <AOPparse_stm> = <AOPparse_notationDecl> ";"
+|>                : ignore [cbras,comment,string]
+|>                | <AOPparse_ERROR1>;
+
+?<AOPparse_stm>;
+|> <AOPparse_stm> = <AOPparse_notationDecl> ";"
+|>                : ignore [cbras,comment,string]
+|>                | <AOPparse_ERROR1>;
+
+3) Recursive (multiple observable) Queries (symbol ??):
+
+These are the same as the ordinary queries but are denoted by a 
+double question mark (??) and they give recursive information. 
+
+Examples: (|> denotes output in the terminal from which tkeden was invoked)
+??%aopmment,string];
+|> notation %aop = <AOPparse_stm> split on ";"
+|>               : ignore [cbras,cocomment,string]
+|>               | <AOPparse_ERROR1>;
+|> <AOPparse_stm> = <AOPparse_notationDecl> ";" : ignore [cbras,
+|> ... and all the other definitions referenced beneath.

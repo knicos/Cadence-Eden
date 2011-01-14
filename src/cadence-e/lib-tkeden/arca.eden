@@ -1,0 +1,916 @@
+/****************************
+* - EDEN library routines - *
+* -      edenlib.e        - *
+*****************************/
+/* $Id: arca.lib,v 1.2 2001/08/01 17:58:02 cssbz Exp $ */
+
+/* used the operator `varname` which turns a string into a variable */
+
+setbuf(stdout, 0);
+
+NullStr ="";
+ON = 1;
+OFF = 0;
+CART    ='C';
+LINE    ='L';
+LABEL   ='T';
+ABST    ='A';
+EXPL    ='E';
+INT     ='I';
+VERT    ='V';
+COL     ='C';
+DIAG    ='D';
+DEBUG   ='N';
+ARROW_BEGIN = 0.51;
+ARROW_END = 0.6;
+ARROW_FACTOR = 0.05;
+_ARROW = ON;
+_LABEL = ON;
+_line_colour=["red","blue","green","brown","thistle","yellow","lightblue"];
+
+proc debugmsg { if (DEBUG=='Y') writeln($1); }
+
+proc _writeln {
+        auto count;
+        for (count = 1; count <= $#; count++)
+                writeln($[count]);
+}
+
+func if_assign { return $1 ? $2 : $3; }
+
+proc check_mode {
+        if ($1 == 0)
+                writeln("ERROR LHS IS ABSTRACT OR UNDEFINED");
+}
+
+func one_int { return [INT,EXPL,0,$1]; }
+
+UNDEF = one_int(@);
+UNDEF_VERT = [VERT, EXPL, 2, [[UNDEF], [UNDEF]]];
+UNDEF_COL = [COL, EXPL, @, [[UNDEF]]];
+
+func op_and  { return $1 && $2; }
+
+func op_or   { return $1 || $2; }
+
+func check_int{
+        auto modval, val,value, int;
+        int = ($# == 2) ? $1 : $1[4][$3];
+        val = int[4];
+        if (val==@) return [$2[1],$2[2],$2[3],value];
+        modval = $2[3];
+        value = (modval==0 || modval==1 ) ? val : val % modval;
+        if (value == 0) value = modval;
+        if (modval==@) return[INT,ABST,int[3],value];
+        if ($2!=@)
+                if (int[3]!=$2[3] && int[3]) {
+                        writeln("ERROR INTS OF INCOMPATIBLE MODULUS");
+                        exit(0);
+                } else
+                        return ($2[2]==EXPL) ? [$2[1],$2[2],$2[3],value] :
+				[$2[1],$2[2],int[3],value];
+        else
+                return[INT,@,@,int[4]];
+}
+
+
+
+func int_mult {
+	/*
+        if ($1==2 || $2==@) return [INT,@,@,@];
+	*/
+	if ($1[3]!=$2[3] && $1[3] && $2[3])
+		writeln("ERROR INTEGERS OF INCOMPATIBLE DIM");
+	else
+		return [$1[1],$1[2],$1[3],$1[4] * $2[4]];
+}
+
+func int_div {
+	/*
+        if ($1==2 || $2==@) return [INT,@,@,@];
+	*/
+	if ($1[3]!=$2[3] && $1[3] && $2[3])
+		writeln("ERROR INTEGERS OF INCOMPATIBLE DIM");
+	else
+		return [$1[1],$1[2],$1[3],int($1[4] / $2[4])];
+}
+
+func int_add {
+	/*
+        if ($1==2 || $2==@) return [INT,@,@,@];
+	*/
+        if ($1[3]!=$2[3] && $1[3] && $2[3])
+                writeln("ERROR INTEGERS OF INCOMPATIBLE DIM");
+        else
+		return [$1[1],$1[2],$1[3],$1[4] + $2[4]];
+}
+
+func int_sub {
+	/*
+        if ($1==2 || $2==@) return UNDEF;
+	*/
+	if ($1[3]!=$2[3] && $1[3] || $2[3]) {
+		writeln("ERROR INTEGERS OF INCOMPATIBLE DIM");
+		return UNDEF;
+	} else
+		return ($1[3]>$2[3]) ? [$1[1],$1[2],$1[3],$1[4] - $2[4]] :
+			[$1[1],$1[2],$2[3],$1[4] - $2[4]];
+}
+
+func int_mod {
+	if ($2[3]==0)
+		return [$1[1],$1[2],$1[3],$1[4] % $2[4]];
+	else {
+		writeln("ERROR ILLEGAL DIM IN MOD INT");
+		return UNDEF;
+	};
+}
+
+func int_rup {
+        auto result, sign;
+        if ($1[4] == @ || $2[4] == @)
+                return UNDEF;
+	sign = ($2[4] < 0) ? -1 : 1;
+	result = $1[4] % $2[4];
+	return one_int((result == 0) ? $1[4] :
+		(result > 0) ? $1[4] - result + sign * $2[4] :
+			       $1[4] + result - sign * $2[4]);
+}
+
+func int_smash {
+        auto new_mod, int1, int2, result;
+        int1 = $1[4];
+        int2 = $2[4];
+        if (int1 == @ || int2 == @ || $1[3] == @ || $2[3] == @) return UNDEF;
+	new_mod = $1[3] * $2[3];
+        result = int1+$1[3];
+	while (result%$1[3] != int1 || result%$2[3] != int2)
+		result = result+$1[3];
+	return [INT,$1[2],new_mod,result];
+}
+
+
+func int_inv  {
+        auto u,v,q,r,f,g,h,m,n;
+        n = $1[3];
+        m = $1[4];
+        if (n == @ || m == @) return UNDEF;
+	u=m;
+	v=n;
+	r=n;
+	f=1;
+	g=0;
+	h=0;
+	while (r) {
+		q=u/v;
+		h=f-g*q;
+		r=u-v*q;
+		f=g;
+		u=v;
+		g=h;
+		v=r;
+	};
+	if (u==1) return [INT,EXPL,$1[3],f];
+	writeln("NO INVERSE - INT INV");
+	return UNDEF;
+}
+
+func int_prime {return [INT, EXPL, 0,$1[4]];}/*normalises after mod calc*/
+
+func int_size {return [INT,EXPL,0,$1[3]];}
+
+func i_eq { return ($1[4]==$2[4]); }
+
+func int_lt {
+        if ($1[3] == $2[3]) {
+                return ($1[4] == @ || $2[4] == @) ? 0 : ($1[4] < $2[4]);
+        } else {
+                writeln("ERROR INTS  OF INCOMPATIBLE DIM");
+                return 0;
+        };
+}
+
+func int_grt {
+        if ($1[3] == $2[3]) {
+                return ($1[4] == @ || $2[4] == @) ? 0 : ($1[4] > $2[4]);
+        } else {
+		writeln("ERROR INTS OF INCOMPATIBLE DIM");
+		return 0;
+	}
+}
+
+func int_ltoe {
+        if ($1[3] == $2[3]) {
+                return ($1[4] == @ || $2[4] == @) ? 0 : ($1[4] <= $2[4]);
+        } else {
+		writeln("ERROR INTS OF INCOMPATIBLE DIM");
+		return 0;
+	}
+}
+
+func int_gtoe {
+        if ($1[3] == $2[3]) {
+                return ($1[4] == @ || $2[4] == @) ? 0 : ($1[4] >= $2[4]);
+        } else {
+		writeln("ERROR INTS OF INCOMPATIBLE DIM");
+		return 0;
+	}
+}
+
+func int_ne {
+        if ($1[3] == $2[3]) {
+                return ($1[4] == @ || $2[4] == @) ? 0 : ($1[4] != $2[4]);
+        } else {
+		writeln("ERROR INTS OF INCOMPATIBLE DIM");
+		return 0;
+	}
+}
+
+func i_actval {return @;}   /*replaces symbolic expressions with values */
+
+
+func find_min {
+        auto min, count;
+        min = @;
+        for(count=1; count<=$1#; count++)
+                if ($1[count]!=@ && $2[count])
+                        min = (min==@ || $1[count]<$1[min]) ? count : min;
+        return min;
+}
+
+
+func col_dist{
+	para start, end;
+        auto count, ncols, at, dists, useable;
+	useable = [];
+        dists = [];
+        ncols = $# ;
+        for(count = 1; count<=$3[3]; count++) {
+                  useable = useable//[1];
+                  dists = dists//[@];
+        }
+        if (start == 0 || end == 0)
+                return UNDEF;
+        if (start > $3[3] || end > $3[3]) {
+                writeln( "START OR END POINT OUT OF RANGE OF PERM");
+                return UNDEF;
+        }
+        dists[start] = 0;
+        for (at = find_min(dists,useable);
+	     at!=end && at!=@;
+	     at = find_min(dists,useable)) {
+                for (count=3; count<=ncols; count++){
+			if ($[count][4][at][4]!=@ && $[count][4][at][4] &&
+			    (dists[$[count][4][at][4]]==@ || 
+			     dists[$[count][4][at][4]]>dists[at]+1))
+				dists[$[count][4][at][4]]=dists[at]+1;
+                };
+                useable[at]=0;
+        }
+        return(one_int(dists[end]));
+}
+
+func col_mult {
+        auto count, permsize, result;
+        permsize = $1[4]#;
+        result = [];
+        if (($1[4]# != $2[4]#)) {
+                writeln("ERROR INCOMPATIBLE PERMS");
+                return UNDEF_COL;
+        }
+	for (count = 1; count <= permsize; count= count+1)
+		result = ($2[4][count][4]!=@ && $2[4][count][4] &&
+			  $1[4][$2[4][count][4]][4])
+			? result // [$1[4][$2[4][count][4]]]
+			: result // [UNDEF];
+	return [COL,EXPL,permsize,result];
+}
+
+
+func vert_col { return [COL, $1[2], $1[3], $1[4]]; }
+
+func join_cols  {
+        auto count, size, result;
+        if ($1[3] == 0 || $2[3] == 0) return UNDEF_COL;
+	if ($1[3] > $2[3]) {
+		size = $1[3];
+		result = $1[4];
+		for (count = 1; count <= $2[3]; count++)
+			if (result[count][4] == @)
+				result[count] = $2[4][count];
+	} else {
+		size = $2[3];
+		result = $2[4];
+		for (count = 1; count <= $1[3]; count++)
+			if ($1[4][count][4] != @ && $1[4][count][4])
+				result[count] = $1[4][count];
+	};
+	return [COL, EXPL, size, result];
+}
+
+func col_size {
+        auto length, count, largest;
+        length = $1#;
+        largest = length;
+        for (count = 1; count <= length; count++)
+                if ($1[count][4] != @ && $1[count][4] > largest)
+			largest = $1[count][4];
+        return largest;
+}
+
+func list_undef {
+        para length;
+        auto count, result;
+        result = [];
+        for (count = 1; count < length; count ++)
+                append result, UNDEF;
+        return result;
+}
+
+func check_col {
+        auto ERROR, count, undef;
+        ERROR = 0;
+        if ($2[3] != 0){
+                undef = list_undef($2[3]);
+                if ($1[4]# != $2[3]) {
+                        writeln("ERROR COLS OF INCOMPATIBLE SIZE");
+                        ERROR = 1;
+                } else for (count = 1; count <= $1[4]#; count++) {
+                        if ($1[4][count][4] != @ && $1[4][count][4] > $2[3]){
+                                writeln("INT OUT OF RANGE IN COL");
+                                ERROR = 1;
+                        };
+                };
+        } else
+                undef = list_undef($1[4]#);
+        return (ERROR==1) ?
+		[COL,$2[2],$2[3], undef] : [COL,$2[2],$1[3],$1[4]];
+}
+
+func c_make {
+        auto size, count, result ;
+        result = [];
+        size = col_size($1);
+        for (count = 1; count <= size; count++)
+                append result, UNDEF;
+        for (count = 1; count <= $1# - 1; count++) {
+                if ($1[count][4] != @ && $1[count][4])
+                        result[$1[count][4]] = $1[count+1];
+                if ($1[count+1][4] == @ && $1[count][4] == 0)
+                        result[$1[count][4]]= UNDEF;
+	};
+        if ($1[$1#][4] != @ && $1[$1#][4])
+                result[$1[$1#][4]] = $1[1];
+        return [COL,EXPL,size,result];
+}
+
+func col_exp {
+        auto count, result, size;
+        size = $2[4];
+        result = $1;
+        if ($2[4] != @){
+                if ($2[4] < 0) size = - $2[4];
+                for (count = 1; count <= size-1; count++)
+                        result = col_mult(result ,$1);
+        };
+        if ($2[4]==0){
+                result = [];
+                for (count= 1; count<= $1[4]#; count++)
+                        append result, one_int(count);
+                result = [COL,EXPL,$1[3]]//[result];
+        };
+        return ($2[4] != @) ?
+                (($2[4] > -1) ? result : col_inv(result)) : UNDEF_COL;
+}
+
+func cactval  {return @;}
+
+func col_inv  {    /*inverse of a perm*/
+	auto result, count;
+        result = [];
+        if ($1[3] != $1[4]# || $1[3]==@ || $1[4]==@) return UNDEF_COL;
+	for (count = 1; count<= $1[3]; count++)
+		append result, UNDEF;
+	for (count = 1; count<= $1[3]; count++)
+		if (($1[4][count][4]==@)||($1[4][count][4]==0));
+	      /*  writeln("WARNING-PERM NOT COMPLETELY DEFINED - INV");*/
+		else
+			result[$1[4][count][4]] = one_int(count);
+	return [$1[1], $1[2], $1[3], result];
+}
+
+func cat_cols {
+        auto count, size, result;
+        size = $1[3] + $2[3];
+        result = $1[4] // $2[4];
+        for (count = $1[3]+1; count <= size; count++)
+                if (result[count][4] != @)
+                        result[count][4] += $1[3];
+        return [COL, EXPL, size, result];
+}
+
+func colisize {return [INT,EXPL,0,$1[3]];}     /*degree of the perm*/
+
+
+proc c_bin_fns {   /*works for binary functions*/
+        auto ERROR, count, undef;
+        ERROR = 0;
+        if ($1[3] != 0){
+                undef = list_undef($1[3]);
+                if ($2[4]# != $1[3]){
+                        writeln("ERROR COLS OF INCOMPATIBLE SIZE");
+                        ERROR = 1;
+                };
+                for (count = 1; ERROR == 0 && count <= $1[3]; count++){
+                        if ($2[4][count][4] != @ && $2[4][count][4] > $1[3]){
+                                writeln("INT OUT OF RANGE IN COL");
+                                ERROR = 1;
+                        };
+                };
+        };
+}
+
+
+proc v_make { return [VERT,EXPL,$1#,$1]; }
+
+
+func check_vert {
+        auto vert;
+        vert = ($#==2) ? $1 : $1[$3];
+        if (vert[3] != $2[3] && $2[3]!=0){
+                writeln("ERROR VERTS OF INCOMPATIBLE DIM");
+                return UNDEF_VERT;
+        } else
+                return [vert[1], $2[2], vert[3], vert[4]];
+}
+
+proc v_bin_fns {   /*works for binary functions*/
+        if ($1[3]!=$2[3] && $1[2]!=ABST)
+                writeln("ERROR VERTS OF INCOMPATIBLE DIM");
+}
+
+func vert_add {
+        auto result, count;
+        if ($1[4]==@ || $2[4]==@)
+		return UNDEF_VERT;
+        if($1[3]!=$2[3])
+		writeln("ERROR VERTS INCOMPATIBLE DIM (RHS)");
+        result =[];
+        for (count = 1; count <= $1[3]; count++)
+                append result, int_add($1[4][count],$2[4][count]);
+        return [$1[1],$1[2],$1[3],result];
+}
+
+func vert_sub {
+        auto result, count;
+        if ($1[4]==@ || $2[4]==@)
+                return UNDEF_VERT;
+        if($1[3]!=$2[3])
+		writeln("ERROR VERTS INCOMPATIBLE DIM (RHS)");
+        result =[];
+        for (count = 1; count <= $1[3]; count++)
+                append result, int_sub($1[4][count],$2[4][count]);
+        return [$1[1],$1[2],$1[3],result];
+}
+
+proc vert_mult {
+        auto result, count;
+        if ($1[4]==@ || $2[4]==@)
+                  return UNDEF_VERT;
+        result =[];
+        for (count = 1; count <= $2[3]; count++)
+                append result, int_mult($1,$2[4][count]);
+        return [$2[1],$2[2],$2[3],result];
+}
+
+func vert_rot {
+        para vert, other;
+        auto xc, yc, xr, yr, angle, plane1, plane2;
+        angle = other[4][1][4] * PI / 180;
+        plane1 = other[4][2][4];
+        plane2 = other[4][3][4];
+        xc = vert[4][plane1][4];
+        yc = vert[4][plane2][4];
+        if ((angle * plane1 * plane2 * xc * yc) == @)
+                return UNDEF_VERT;
+	xr = int(xc * cos(angle) - yc * sin(angle));
+	yr = int(xc * sin(angle) + yc * cos(angle));
+	vert[4][plane1] = one_int(xr);
+	vert[4][plane2] = one_int(yr);
+	return vert;
+}
+
+func v_ref {return @;}      /*reflection*/
+
+func vert_smash {   /*cat vertices dim N ,M -> N+M*/
+        return [$1[1],$2[2],$1[3]+$2[3], $1[4]//$2[4]];
+}
+
+func v_actval {return @;}
+
+func vert_size {return [INT,EXPL,0,$1[3]];}
+
+func vneq {
+        auto count, result;
+        result = 0;
+        if ($1[3] != $2[3])
+                writeln("ERROR VERTS Of INCOMPATIBLE DIM (IF)");
+        else
+                for (count = 1; count <= $1[3]; count++)
+                        if ($1[4][count] == $2[4][count])
+				result++;
+        return result!=$1[3];
+}
+
+func veq {
+        auto count, result;
+        if ($1[3] != $2[3])
+                writeln("ERROR VERTS Of INCOMPATIBLE DIM (IF)");
+        else
+                for (count = 1; count <= $1[3]; count++)
+                        if ($1[4][count] == $2[4][count])
+				result++;
+        return result==$1[3];
+}
+
+proc d_bin_fns{
+        if ($1[3]!=$2[3] && $1[3]!=0)
+                writeln("ERROR DIAGS OF INCOMPATIBLE SIZE");
+}
+
+func check_diag {
+        if ($2[3]==0 || $1[3]==$2[3]) return $1[4][2];
+}
+
+func diag_join {
+        return [DIAG, EXPL, $2[3]+$1[3], [EXPL, $1[4][2]//$2[4][2]]];
+}
+
+func sub_diag {
+        auto subsize, result, count;
+        subsize = $# - 1;
+        result = [];
+        for (count = 1; count <= subsize; count++) {
+                if ($[count+1][4] != @)
+                        append result, $1[4][2][$[count+1][4]];
+                else
+                        append result, UNDEF_VERT;
+        }
+        return [DIAG, EXPL, $#-1, [EXPL, result]];
+}
+
+func diag_mult {
+        auto result, count;
+        result = [];
+        for (count = 1;count <= $2[3]; count++)
+                append result, vert_mult($1,$2[4][2][count]);
+        return [DIAG, EXPL, $2[3], [EXPL, result]];
+}
+
+func diag_rot {
+        auto result, count;
+        result = [];
+        for (count = 1;count <= $1[3]; count++)
+                append result, vert_rot($1[4][2][count], $2);
+	return [DIAG, EXPL, $1[3], [EXPL, result]];
+}
+
+func v_trans {
+        auto count, verts, result;
+        result = [];
+        verts = $2[4][2]#;
+        for (count=1; count <= verts; count++)
+                append result, vert_add( $1, $2[4][2][count]);
+        return [$2[1],$2[2],$2[3], [$2[4][1], result], $2[5]];
+}
+
+func diag_smash {
+        auto count, result;
+        result = [];
+        for (count = 1; count <= $1[3]; count++)
+                result = result//v_trans($1[4][2][count],$2)[4][2];
+        return [$2[1],$2[2],$2[3]*$1[3], [$1[4][1], result]];
+}
+
+func diag_size {return [INT,EXPL,0,$1[2][2]];}   /*number of verts*/
+
+func nd_2d {
+    para vert;
+    auto count, count2, dim;
+    dim = vert#;
+    for (count = dim; count>=3; count--)
+	for (count2 = dim-1; count2 >= 1; count2--)
+	    if (vert[count2][4] > 0) {
+		vert[count2][4] = vert[count2][4] - 0.1*vert[count][4];
+		if (vert[count2][4] < 0) vert[count2][4] = 0;
+	    } else if (vert[count2][4] < 0 ) {
+		vert[count2][4] = vert[count2][4] + 0.1*vert[count][4];
+		if (vert[count2][4] > 0)vert[count2][4] = 0;
+	    };
+    return [vert[1],vert[2]];
+}
+
+func inColList {
+	para list, item;
+	auto i;
+	if (list == []) return 0;
+	for (i = 1; i <= list#; i++)
+		if (list[i] == item) return i;
+	return 0;
+}
+
+/********************************************************************
+	  Functions for manipulating assocative memory
+********************************************************************/
+
+
+func
+searchKey
+{
+	para	map, key;
+	auto	start, mid, end;
+
+	start = 1;
+	end = (*map)#;
+	mid = (start + end) / 2;
+	while ( start <= mid && mid <= end ) {
+		if ((*map)[mid][1] > key)
+			end = mid - 1;
+		else if ((*map)[mid][1] < key)
+			start = mid + 1;
+		else			/* match */
+			return [
+				mid,
+				(*map)[mid][2]
+			];
+		mid = (start + end) / 2;
+	}
+	return [mid < start ? start : mid, @];
+}
+
+func
+putKey
+{
+	para	map, key, data;
+	auto	ans;
+
+	ans = searchKey(map, key);
+	if (ans[2] == @) {
+		insert *map, ans[1], [key, data];
+		return ans[1];
+	} else			/* already there */
+		return 0;	/* fail */
+}
+
+func
+deleteKey
+{
+	para	map, key;
+	auto	ans;
+
+	ans = searchKey(map, key);
+	if (ans[2] == @) {
+		return 0;		/* fail */
+	} else {			/* found */
+		delete *map, ans[1];
+		return ans[1];
+	}
+}
+
+func
+replaceKey
+{
+	para	map, key, data;
+	auto	ans;
+
+	ans = searchKey(map, key);
+	if (ans[1] > (*map)# || (*map)[ans[1]][1] != key)	/* not there */
+		insert *map, ans[1], [key, data];
+	else				/* found */
+		(*map)[ans[1]][2] = data;
+
+	return ans[1];
+}
+
+proc dispNoLabels {
+        auto diag, dname, oldDiagCols, cols, window, j, vertex;
+	auto collist, pos;
+        diag = *($[$#-1]);
+	dname = nameof($[$#-1]);
+	oldDiagCols = "old_"//dname//"_cols";
+	if (`oldDiagCols` == @) `oldDiagCols` = [];
+	collist = [];
+        cols = $#-2;
+	window = $[$#];
+	for (j = cols; j >= 2; j -= 2) {
+		append collist, $[j-1];
+		if (pos = inColList(`oldDiagCols`, $[j-1])) {
+			delete `oldDiagCols`, pos;
+		}
+		delete_shape(&`$[j-1]//"__"`);
+		draw_col($[j-1],$[j][4],diag[4][2],window);
+	}
+	while (`oldDiagCols` != []) {
+		delete_shape(&``oldDiagCols`[1]//"__"`);
+		shift `oldDiagCols`;
+	}
+	vertex = "L_"//dname;
+	delete_shape(&`vertex`);
+	`oldDiagCols` = collist;
+}
+
+proc dispWithLabels {
+        auto diag, dname, oldDiagCols, cols, window, i, j, vertex;
+/*	auto collist, pos;	*/
+	auto collist, pos, _p1, x1, y1, _L_attr;
+	auto var, viewport_name;
+        diag = *($[$#-1]);
+	dname = nameof($[$#-1]);
+	oldDiagCols = "old_"//dname//"_cols";
+	if (`oldDiagCols` == @) `oldDiagCols` = [];
+	collist = [];
+        cols = $#-2;
+	window = $[$#];
+	for (j = cols; j >= 2; j -= 2) {
+		append collist, $[j-1];
+		if (pos = inColList(`oldDiagCols`, $[j-1])) {
+			delete `oldDiagCols`, pos;
+		}
+		delete_shape(&`$[j-1]//"__"`);
+		draw_col($[j-1],$[j][4],diag[4][2],window);
+	}
+	while (`oldDiagCols` != []) {
+		delete_shape(&``oldDiagCols`[1]//"__"`);
+		shift `oldDiagCols`;
+	}
+	vertex = "L_"//dname;
+	delete_shape(&`vertex`);
+	`oldDiagCols` = collist;
+	for(i = 1; i<=diag[4][2]#; i++){
+		x1 = nd_2d(diag[4][2][i][4])[1][4];
+		y1 = nd_2d(diag[4][2][i][4])[2][4];
+		_p1 = cart(x1,y1);
+		_L_attr = "color=gray1";
+		`vertex` = label(str(i),_p1);
+		PLOT_label(`window`, &`vertex`, &_L_attr);
+	}
+}
+
+proc draw_col {
+        para c_nm,cols,verts,window;
+        auto k1,x1,y1,x2,y2,li,vert;
+/*	auto colour, style, _L_attr; */
+	auto colour, style, _L_attr, _p1, _p2;
+	auto var, viewport_name;
+
+	colour = c_nm[c_nm#]-'a'+1;
+	colour = colour ? colour : _line_colour#;
+        style = (displayDepth > 1)
+		? "solid,color="//_line_colour[colour]
+		: (colour == 1)
+			? "solid,color=gray1"
+			: "dashed,dash="//str(colour*20+2);
+        _L_attr = "linestyle="//style ;
+	for (k1=1;k1<=cols#;k1++){
+		vert = nd_2d(verts[k1][4]);
+		x1=vert[1][4];
+		y1=vert[2][4];
+		_p1 = cart(x1,y1);
+		if ((cols[k1][4] != @ && cols[k1][4])&&
+		    (k1!=cols[cols[k1][4]][4] || k1<cols[k1][4])) {
+			vert = nd_2d(verts[cols[k1][4]][4]);
+			x2=vert[1][4];
+			y2=vert[2][4];
+			_p2 = cart(x2,y2);
+			`c_nm//"__"` = line(_p1,_p2);
+			PLOT_line(`window`, &`c_nm//"__"`, &_L_attr);
+			if ((_ARROW)&&(k1!=cols[cols[k1][4]][4])){
+				draw_arrow(&`c_nm//"__"`, window, &_L_attr);
+			}
+		} 
+	}
+}
+
+proc draw_arrow {
+        para lin, window, attr;
+        auto    p1, p2, x1, y1, dy, dx,u,v, li;
+        p1 = (*lin)[2];
+        p2 = (*lin)[3];
+        x1= p1[2];
+        y1= p1[3];
+        dy = (p2[3]-p1[3]);
+        dx = (p2[2]-p1[2]);
+        u = -dy * ARROW_FACTOR;
+        v = dx * ARROW_FACTOR;
+        *lin = [LINE,[CART, x1+ARROW_BEGIN*dx+u, y1+ARROW_BEGIN*dy+v],
+		     [CART, x1+ARROW_END*dx, y1+ARROW_END*dy]];
+        PLOT_line(`window`, lin, attr);
+        *lin = [LINE,[CART, x1+ARROW_END*dx, y1+ARROW_END*dy],
+		     [CART, x1+ARROW_BEGIN*dx-u, y1+ARROW_BEGIN*dy-v]];
+        PLOT_line(`window`, lin, attr);
+}
+
+/****************************************************************
+ *                    INITIALIZE ROOT CONTEXT                   *
+ ****************************************************************/
+_ is [ OPENSHAPE ];
+
+WidgetMap = [];
+
+/*-------------+------------------------------------------------+
+               | PLOT_point, PLOT_line, PLOT_circle, PLOT_shape |
+               +------------------------------------------------*/
+PLOT_point  is PLOT_shape;
+PLOT_line   is PLOT_shape;
+PLOT_circle is PLOT_shape;
+PLOT_label  is PLOT_shape;
+
+proc delete_shape {
+        para    segid;
+        auto ans, i;
+        ans = searchKey(&WidgetMap, int(segid));
+
+	if (ans[2] != @)
+	    for (i = 1; i <= ans[2]#; i++)
+		xdelete(ans[2][i], segid);
+}
+
+proc PLOT_shape {
+	para	viewport_list, segid, attrPtr;
+	auto	ans, i, viewport_name, s,
+		xOrigin, yOrigin, xScale, yScale, tclVarNameStart;
+
+	for (i = 1; i <= viewport_list#; i++) {
+		/* viewport_name eg: "screen" [Ash] */
+		viewport_name = viewport_list[i];
+
+		/* tclVarNameStart eg: "screen.b1_1" [Ash] */
+		tclVarNameStart = viewport_name[1] // "." // viewport_name[2];
+
+		s = "set "//tclVarNameStart;
+		xOrigin = float(tcl(s // "_xOrigin"));
+		yOrigin = float(tcl(s // "_yOrigin"));
+		xScale = float(tcl(s // "_xScale"));
+		yScale = float(tcl(s // "_yScale"));
+                DRAW_shape(viewport_name, segid, *segid, attrPtr,
+			xOrigin, yOrigin, xScale, yScale);
+	}
+	replaceKey(&WidgetMap, int(segid), viewport_list);
+}
+
+proc DRAW_shape
+{
+	para	viewport_name, SegName, entity, attr,
+		xOrigin, yOrigin, xScale, yScale;
+        auto    x1, y1, x2, y2, i;
+
+	switch (entity[1]) {
+	case 'C':
+	    xpoint(viewport_name, SegName,
+                entity[2], entity[3], attr,
+		xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'L':
+	    xline(viewport_name, SegName,
+                entity[2][2], entity[2][3], entity[3][2], entity[3][3], attr,
+		xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'E':
+	    xcircle(viewport_name, SegName,
+                entity[2][2], entity[2][3], entity[3], attr,
+		xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'T':
+	    xtext(viewport_name, SegName,
+                entity[3][2], entity[3][3], str(entity[2]), attr,
+		xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'S':
+	    for (i = 2; i <= entity#; i++)
+		DRAW_shape(viewport_name, SegName, entity[i], attr,
+		xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	default:
+	    writeln("ERROR: DRAW_shape(" , entity, ");");
+	    break;
+	}
+}
+
+proc InitARCAViewport {
+    /*
+    include(getenv("PUBLIC")//"/lib/ex/ex.init");
+    */
+    OpenDisplay("ARCA", 0, 0, 500, 500);
+    FONT = "{courier 10}";
+    fontwidth = FontWidth("ARCA", FONT);
+    fontheight = FontHeight("ARCA", FONT);
+    displayDepth = DisplayDepth("ARCA");
+    AddBox("ARCA", "Default", 0, 0, 500, 500);
+    ChangeBox("ARCA", "Default", "borderWidth", 0);
+    ARCA = [["ARCA", "Default"]];
+}

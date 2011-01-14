@@ -1,0 +1,10 @@
+SHELL=/bin/sh
+SCRIPT_PATH=@prefix@/share/cadence/lib-tkeden
+
+SCRIPTS=aop.eden aop_notation.eden aop.txt arca.eden client.tcl credits.txt donald.eden donald.txt doste.e eddi.eden eden.eden edenio.tcl edensl.eden eden.txt keys.txt rgb.txt sasami.eden sasami.txt scout.eden scout.txt server.tcl wedenio.tcl
+
+install::
+	install -d "$(SCRIPT_PATH)"
+	install -m 644 $(SCRIPTS) "$(SCRIPT_PATH)"
+	cd gel; make install
+

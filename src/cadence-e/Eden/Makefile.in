@@ -1,0 +1,15 @@
+#
+# $Id: Makefile.in,v 1.14 2002/02/18 19:18:41 cssbz Exp $
+#
+
+PARSER_SOURCE = yacc.y
+PARSER_OUT = yacc.c
+PARSER_HEADERS_OUT = yacc.h
+
+SOURCES = builtin.c code.c eval.c heap.c global.q.c lex.c lib.c machine.c \
+		main.c refer.c runset.c symbol.c type.c \
+		macosxlibloc.c
+
+LIB = libeden.a
+
+include ../generic.mk

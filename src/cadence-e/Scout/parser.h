@@ -1,0 +1,114 @@
+typedef union {
+	char		*s;	/* character string */
+	double		 d;	/* double value */
+	int		 i;	/* integer value */
+	symbol		*v;	/* variables */
+	tree		*t;	/* parse tree */
+	WinStruct	 w;	/* window */
+	WinField	 f;	/* window attributes */
+} YYSTYPE;
+#define	STR	257
+#define	NUMBER	258
+#define	ROW	259
+#define	COLUMN	260
+#define	CONTENT	261
+#define	JUST	262
+#define	SWITCH	263
+#define	INTEGERHONEST	264
+#define	STRING	265
+#define	INTEGER	266
+#define	POINT	267
+#define	BOX	268
+#define	FRAME	269
+#define	WINDOW	270
+#define	DISPLAY	271
+#define	IMAGE	272
+#define	TYPE	273
+#define	PICT	274
+#define	XMIN	275
+#define	YMIN	276
+#define	XMAX	277
+#define	YMAX	278
+#define	FONT	279
+#define	BG	280
+#define	FG	281
+#define	BDCOLOR	282
+#define	BORDER	283
+#define	ALIGN	284
+#define	SENSITIVE	285
+#define	BDTYPE	286
+#define	ALL	287
+#define	STRVAR	288
+#define	INTVAR	289
+#define	PTVAR	290
+#define	BOXVAR	291
+#define	FRAMEVAR	292
+#define	WINVAR	293
+#define	DISPVAR	294
+#define	UNKNOWN	295
+#define	IMGVAR	296
+#define	FORMPT	297
+#define	FORMBOX	298
+#define	TEXTBOX	299
+#define	FORMFRAME	300
+#define	FORMWIN	301
+#define	FORMDISP	302
+#define	SUBSTR	303
+#define	STRCAT	304
+#define	CONCAT	305
+#define	STRLEN	306
+#define	TOSTRING	307
+#define	DOTFRAME	308
+#define	DOTSTR	309
+#define	DOTBOX	310
+#define	DOTTYPE	311
+#define	DOTPICT	312
+#define	DOTXMIN	313
+#define	DOTYMIN	314
+#define	DOTXMAX	315
+#define	DOTYMAX	316
+#define	DOTFONT	317
+#define	DOTBG	318
+#define	DOTFG	319
+#define	DOTBDCOLOR	320
+#define	DOTBORDER	321
+#define	DOTBDTYPE	322
+#define	DOTALIGN	323
+#define	DOTSENSITIVE	324
+#define	DOTNE	325
+#define	DOTNW	326
+#define	DOTSE	327
+#define	DOTSW	328
+#define	DOTN	329
+#define	DOTE	330
+#define	DOTS	331
+#define	DOTW	332
+#define	BOXSHIFT	333
+#define	BOXINTERSECT	334
+#define	BOXCENTRE	335
+#define	BOXENCLOSING	336
+#define	BOXREDUCE	337
+#define	APPEND	338
+#define	DELETE	339
+#define	IMGFUNC	340
+#define	IF	341
+#define	THEN	342
+#define	ELSE	343
+#define	ENDIF	344
+#define	ImageFile	345
+#define	ImageScale	346
+#define	ERROR	347
+#define	OR	348
+#define	AND	349
+#define	EQ	350
+#define	NE	351
+#define	LT	352
+#define	LE	353
+#define	GT	354
+#define	GE	355
+#define	UMINUS	356
+#define	DOTR	357
+#define	DOTC	358
+
+
+extern YYSTYPE st_lval;

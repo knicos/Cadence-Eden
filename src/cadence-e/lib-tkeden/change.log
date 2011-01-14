@@ -1,0 +1,2885 @@
+-*-text-*-
+
+*******************
+EDEN CHANGELOG FILE
+*******************
+
+The most recent changes are listed first.  Within each version section,
+most recent changes go at the end.
+
+***********************************************************************
+1.71   [Russ] Tue Nov  4 14:36:00 GMT 2008
+************************************************************************
+
+Fix for cyclic dependency bug.
+
+************************************************************************
+1.70   [Ant] Sun Mar  9 09:54:14 GMT 2008
+************************************************************************
+
+Added tkeden icon for windows.
+
+Redirected console output to integrated output box.
+
+Added %angel (use installangel();).
+
+Fixed SCOUT text window relief problem.
+
+Corrected documentation.
+
+Added Web EDEN functionality.
+
+Added trimstr function.
+
+Made sourcecode 64-bit compliant.
+
+Added updated GPL text to sourcecode.
+
+Added Knight's Sasami primitives (cube, cylinder & sphere).
+
+Reverted runset to previous functionality (recommited revision 129).
+
+Removed unnecessary tcl output.
+
+
+************************************************************************
+1.68   [Ant] Tue Dec 12 11:29:24 GMT 2006
+************************************************************************
+
+Fixed update problem when filling a jug and redefining the content.
+Caused by simplification in revision 129 to stop multiple calls to
+runset handling procedures (r129 has now been reversed).
+
+
+************************************************************************
+1.67   [Ant] Thu Oct 26 10:24:58 BST 2006
+************************************************************************
+
+Moved tkeden_textsize to scout.eden so that ttyeden works.
+
+Moved contents of aop directory into single file (aop.eden).
+
+Improved %aop to allow strings containing the string character. Fixed
+bug with querying. [Charlie]
+
+Add AOP Quick Reference. Updated SCOUT Quick Reference (scout.txt). 
+[Charlie]
+
+Fixed block problem in %aop.
+
+Fixed %eddi bugs.
+
+Updated %eddi to not use intermediate var_'s in expressions.
+
+
+************************************************************************
+1.66   [Ant] Thu Oct 20 15:59:14 BST 2005
+************************************************************************
+
+Added DoNaLD function 'scalexy'.
+
+Adding the --with-bison option to the configure script. [Russell]
+
+Added a search button to the help windows. This calls up the standard 
+'find' dialogue. [Charlie]
+
+Fixed problem with opening multiple help windows. [Charlie]
+
+Added observable 'tkeden_textsize' to change the size of the text in the input window.
+
+Changed scout 'screen' behaviour to be hidden until used.
+
+
+************************************************************************
+1.65   [Ant] Mon Jul 25 14:06:18 BST 2005
+************************************************************************
+
+Added the latest agent-oriented parser (AOP) and removed traces of the
+existing AOP.
+
+Updated the Eddi notation to make use of the new AOP.
+
+
+************************************************************************
+1.64   [Ashley] Fri Jul  8 16:25:47 BST 2005
+************************************************************************
+
+Error message fix: Tcl todo command previously described itself as
+the 'eden' command.
+
+Major changes to RunSet (todo()) handling to simplify code.
+
+Bug fix: mouse motion in a sensitive:MOTION Scout window previously
+caused large callstacks due to reentrant calls, which would blow
+a Tcl stack in some circumstances.
+
+Added a new icon (an eye) on Mac.
+
+Bug fixes to handling of Interrupt button and ctrl-c press.
+
+Added createtimer, deletetimer, deletealltimers C built-ins,
+higher-level Eden edenclocks list and setedenclock, removeedenclock,
+pauseedenclocks, unpauseedenclocks helper procedures.  These should
+allow simplified models which have previously used a common case of
+'todo()' and also allow model simulations to be related to real time
+without hogging the CPU.
+
+Added edeninterruptedhook hook possibility.
+
+Bug fix: previously 'execute("writeln(42);");' would cause ttyeden
+to crash if the -l argument was not given.
+
+
+************************************************************************
+1.63   [Ashley] Mon Jun 27 16:37:43 GMTST 2005
+************************************************************************
+
+Minor changes to Sasami and Scout Quick Reference guides to make more
+compatible with HTML, so they can be displayed in the new (currently
+unreleased) EM web site.
+
+Bug fix: the new 'restart' command didn't prove reliable on Windows:
+it left behind a process attempting to take 100% CPU.  Hopefully
+now fixed.
+
+
+************************************************************************
+1.62   [Ashley] Tue Jun 21 20:15:43 GMTST 2005
+************************************************************************
+
+dtkeden on Mac OS X (unfortunately requiring use of command line to
+run it at present).
+
+Bug fix: fixed a segmentation fault that could occur in some cases
+when a func/proc/procmacro was not found.  [ant/ashley]
+
+Implemented single-line # comments in %lsd.  Now (hopefully), the
+double-hash ## single-line comment facility works in all notations.
+
+Added a -w command line argument for dtkeden login name.  (w for
+"who" as the number of single-letter possibilities is short!).
+
+Changed EDEN web site location to use the go.warwick redirect.
+
+Added a Restart command, available as a menu and also when a dtkeden
+client shows the "dtkeden server has shut down" message.
+
+Bug fix: previously dtkeden didn't work correctly on Windows without
+cygwin installed due to use of the UNIX 'date' command.  Fixed.
+
+
+************************************************************************
+1.61   [Ashley] Mon Jun 13 14:50:11 BST 2005
+************************************************************************
+
+Fixed small build configuration error.
+
+Added builtin 'realrand()'.  [ant]
+
+Modified eden function 'rnd(int)' to use more random 'realrand()'.
+[ant]
+
+
+************************************************************************
+1.60   [Ashley] Wed Jun  8 18:18:42 BST 2005
+************************************************************************
+
+Minor code configuration changes.  The full EDEN distribution (tkeden,
+ttyeden, dtkeden) seems to build OK for Windows.
+
+
+************************************************************************
+1.59   [Ashley] Wed Jun  8 13:19:39 BST 2005
+************************************************************************
+
+Bug fix: showpara() procedure was not working -- fixed.
+
+arca.eden can now be included without a working IPTrans setup.
+
+Bug fix: opening two windows using the procedure involving OpenDisplay
+documented in the EDEN FAQ caused display "corruption" (incorrect aspect
+ratio etc) in some cases.  This is now fixed.
+
+Bug fix: EDDI was writing to the Eden global variables p1 and p2, which
+conflicted with (eg) some people's DoNaLD models -- fixed.
+
+
+************************************************************************
+1.58   [Ashley] Thu Jun  2 20:06:22 BST 2005
+************************************************************************
+
+Minor code configuration changes to enable experimental Windows
+build.
+
+
+************************************************************************
+1.57   [Ashley] Thu Jun  2 11:51:24 BST 2005
+************************************************************************
+
+Automated creation of Mac distribution ("make macdist").
+
+Separated make's Windows targets into "make winapp" and "make windist".
+
+Implemented several key shortcuts on Mac OS X.
+
+Changed some menu structures for consistency with Mac OS X.
+
+Found and fixed possible memory reallocation bug in Eden regular
+expression facility.
+
+Greatly increased Sasami performance by changing data structures used
+for vertices and polygons.
+
+Sasami now prints rendering performance timing information out if
+"debug(8);" is executed in Eden.
+
+
+************************************************************************
+1.56   [Ashley] Wed May 25 13:47:36 BST 2005
+************************************************************************
+
+Experimental hack change to Sasami vertex data structure which seems
+to vastly improve the speed of Sasami rendering.
+
+
+************************************************************************
+1.55   [Ashley] Tue May 24 12:06:47 BST 2005
+************************************************************************
+
+Sasami now works on the Mac.  As part of this, the Togl code (used in
+Sasami) was updated, which might lead to other minor changes.
+
+Source code is now hosted in Subversion.  The -v argument and the About
+tkeden menu show the repository revision number from which the binary
+was built.
+
+Sasami window can now be controlled by dragging with mouse and using
+keyboard modifier keys (to make control with a single mouse button
+possible -- multi-button mice operate in the original way on Mac).
+Added documentation to Sasami Quick Reference.
+
+
+************************************************************************
+1.54   [Ashley] Thursday January 20 17:35:21 GMT 2005
+************************************************************************
+
+Added new Eden 'inpdevlineno()' built-in function, which returns the
+current line number in the Eden (or other?) code.  Also 'inpdevname()',
+which returns the name of the current input device.  See mentions in
+eden.txt for usage.
+
+Added information about who made each release to this file -- mostly
+[Ashley] at this point...
+
+Updated credits.txt a little.
+
+Removed line about reporting bugs at SourceForge at the top of this file.
+
+
+************************************************************************
+1.53   [Ashley] Tue Mar  9 12:57:13 GMT 2004
+************************************************************************
+
+Added rawserialopen, rawserialread and rawserialclose functions for use
+with the train system.
+
+
+************************************************************************
+1.52   [Ashley] Monday March  1 09:28:28 GMT 2004
+************************************************************************
+
+Added Son V Truong, Meurig Beynon to credits.txt.  Also added
+approximate years of contribution to credits.txt and ordered
+chronologically.
+
+Added another curses possibility to configure script required
+on Mac OS X with Fink.
+
+ttyeden would previously not compile if the readline library
+was not available -- fixed.
+
+Added timing instrumentation of scheduling and graph cycle checking.
+The Eden functions insReset() and insPrint(); are available when
+compiled with -DINSTRUMENT
+
+Remembered and added credit to Carlos Fischer in this file for a bug in
+1.13.
+
+Added thanks to unnamed contributers in credits.txt.
+
+Added symbol types to description of symbols(), type() and symboldetail()
+functions in eden.txt.
+
+Fixed a bug in symboldefinition() function which previously caused a
+"nested too deeply" evaluation loop if the definition
+  s is symboldefinition("s")
+(and other larger examples which include this dependency) was created.
+
+Improved error message "list or string required ... when trying to find
+1th item" to "... item with index 1".
+
+Fixed bug in str() function which caused a segmentation fault when given a
+long list -- for example 'writeln(str(symboltable()));'.
+
+
+************************************************************************
+1.51   [Ashley] Wednesday January 14 19:42:04 GMT 2004
+************************************************************************
+
+Scout windows background colour now explicitly set to what it used to be in
+older versions of tkeden.  (This will probably appear a bit dark on the
+Mac).
+
+Added WMB's fix for the EDDI garbage collector.  Before, eden variables
+that were dependent upon values in an eddi table would have been
+automatically removed during garbage collection.  Now, a definition is only
+removed if the definition name starts with "var_".
+
+Got compiling on Windows again (the last time was 1.46).  Using an up to
+date cygwin, with Tcl/Tk 8.4 rather than 8.0.  This might possibly bring
+some associated interface improvements.  Sasami is unfortunately broken
+at the moment (an assertion in togl.c fails when the Sasami window is
+opened), so this won't be a public release.
+
+
+************************************************************************
+1.50   [Ashley] Mon Mar 31 20:04:30 BST 2003
+************************************************************************
+
+Fixes for Mac OS X 10.2.4 with Tcl/Tk 8.4.2.  This latest version of
+Tcl seems to have fixed the following bugs that were present in 1.43.
+Many other issues remain on this platform however.
+  - Window close / minimise / max buttons now show indicators on mouse over
+  - Paste from elsewhere in OS now works (Apple-c, Apple-v etc to copy
+    and paste, although it seems you can't currently select text from
+    any tkeden window except the input window).
+  - tkeden -> Hide tkeden now works (although Apple-h key shortcut
+    doesn't seem to)
+  - Apple-q no longer gives a bus error (although it doesn't work)
+  - Open dialogue doesn't seem to give "tkwin == NULL, 224" errors
+
+Middle and right mouse buttons now emulated on Mac OS X.  Hold down
+the Option (Alt) key when pressing the mouse button for a middle mouse
+button click, or Command (Apple) for a right click.  This only works
+for Scout windows (and probably not TEXTBOXES).
+
+Fixed background colour for Scout windows to a light grey colour
+rather than read the system default (which on Mac OS X is white).
+
+
+************************************************************************
+1.49   [Ashley] Tuesday March 18 16:27:44 GMT 2003
+************************************************************************
+
+Added Eden sasami_camera_scale list variable.
+
+Added ability to move the camera position in X and Y by using the
+middle mouse button (this will probably need rethinking for Windows).
+
+Added Eden sasami_reset_camera() proc which can be used if you get
+lost.
+
+Added Eden sasami_camera_rotthentrans variable, initially set to 0,
+when the Sasami code first translates then rotates the camera, making
+it easy to view an object centred on the origin.  If this flag is set
+to 1, the rotation is done first, making it easier to simulate an
+observer in the world, standing at a position and looking in a
+particular direction.
+
+Added Eden sasami_camera_frustum_left, right, bottom, top, near and far
+variables in order to allow the field of view of the camera to be adjusted.
+In order to preserve the aspect ratio, top and bottom are initially set to
+the viewport x size / y size (but integer division for some reason).  This
+is currently a hack: these variables should be linked using dependency to
+sasami_view_xsize and ysize, but sasami_view_xsize/ysize do not currently
+update when the Sasami window is resized using the mouse.
+
+Eden sasami_reset_camera() proc renamed to sasami_camera_reset() to follow
+the existing scheme.
+
+
+************************************************************************
+1.48   [Ashley] Tuesday February 18 17:44:33 GMT 2003
+************************************************************************
+
+Added usbhidopen, usbhidread, usbclose Eden functions (documented in
+eden.txt) on Linux.  The following code implements control of a Sasami axis
+by a USB steering wheel:
+
+  %eden
+
+  wheelfd = usbhidopen("/dev/input/event0");
+
+  proc readwheel {
+    auto l;
+    l = usbhidread(wheelfd);
+    if (l != []) wheel = l;
+    todo("readwheel();");
+  }
+
+  readwheel();
+
+  %sasami
+  open_display
+
+  %eden
+  sasami_camera_rot is [0, 0, wheel[4]];
+
+The following commands may be required to configure the Linux USB system
+appropriately:
+
+  modprobe hid ; modprobe uhci ; modprobe evdev
+  mount -t usbdevfs usbdevfs /proc/bus/usb
+  (to test): cat /dev/input/event0 | od -h
+
+  If event0 is not there:
+  mknod /dev/input/event0 c 13 64
+  chown csXYZ /dev/input/event0
+
+
+************************************************************************
+1.47   [Ashley] Sunday February 16 17:26:44 GMT 2003
+************************************************************************
+
+The Scout "bordercolour" attribute, although documented, was previously
+unimplemented as Tk doesn't provide a way to control the border colour.
+However Tk does provide a way to control the highlight colour, so now this
+is used instead of the border when a coloured (non-"black") border is
+requested.
+
+Fixed numerous bugs in Scout ImageScale function.
+
+Added ImageSized Eden function, which will scale an image to the requested
+pixel size (preserving the aspect ratio).  This function is only currently
+accessible from Donald (Scout would require further work).  Eg:
+
+  %donald
+  image img
+  char filename
+  int iconSize
+
+  iconSize = 250
+
+  img = I!ImageSized("gif", filename, iconSize)
+o
+  label lbl
+  lbl = label(img, {500, 250})
+
+Added sasami.eden.  Camera position and axes rotation are now defined as
+Eden variables (sasami_camera_pos and sasami_camera_rot respectively).
+Each is an Eden list specifying x, y and z.  This new facility should allow
+the Sasami display to be controlled by Eden code.  Modified the Tcl mouse
+button handling code to use this new scheme.
+
+FALSE and TRUE now a part of eden.eden, not donald.eden.
+
+
+************************************************************************
+1.46   [Ashley] Friday October 25 11:34:45 BST 2002
+************************************************************************
+
+File -> Execute caused "notationGet called when currentNotation is not set
+sensibly" errors when the executed file contained a notation change.  (An
+error introduced around 1.43).  Fixed.
+
+Notation changes in files introduced by File -> Execute didn't persist,
+although the interface showed them persisting.  This bug has existed since
+at least 1.30.  Fixed.
+
+
+************************************************************************
+1.45   [Ashley] Thursday October 24 21:33:17 BST 2002
+************************************************************************
+
+DCS Linux now needs -I<path to tkeden source> to compile, as readline
+libraries #include <config.h>.  Created dcs-linux-i686.configure,
+dcs-solaris-i386.configure, dcs-solaris-sparc.configure.
+
+Notations with names of length multiple 8 characters (including the % and
+terminating character, eg %sqlzero) previously failed to work.  Now fixed.
+The reason is something I don't quite understand, to do with getheap().
+
+Tcl procedure removeNotationRadioButton now given an Eden procedure, which
+works also in ttyeden (where it silently does nothing).  Now, if you want
+to hide a notation radio button to hide the notation's existence (note that
+the notation itself is not actually removed), use the Eden
+removeNotationRadioButton procedure, passing the name of the notation,
+including the % character.  For example:
+  %eden
+  removeNotationRadioButton("%eden");
+
+'notation' command reinstated as a quick workaround to get existing models
+which use AOP to work.  This function will be removed in the future once
+we've fixed the existing models to use the new installAOP procedure.
+
+symboltable() and symboldetail() now include the symbol's "master"
+information, which describes the last agent to change the symbol, as the
+last item in the list (inner list for symboltable()) returned.  This may
+possibly break existing models which use these functions.
+
+Making attempts to debug sqleddi (mainly within the model).
+
+Added more output to debug(2), showing when todo() is actually called.
+
+The new notations framework now understands the ## comment syntax, so all
+parsers (including AOP) should now automatically ignore ## single line
+comments.
+
+Fixed bugs in ttyeden's handling of todo(), hopefully now allowing
+sqleddiBeynon2002 to function correctly in ttyeden.  The "currently active
+notation at the end of an included file doesn't persist" bug (an attempt
+was made to fix this in version 1.31 below) still persists, but the prompt
+faithfully reflects the currently active notation.
+
+
+************************************************************************
+1.44   [Ashley] Fri Aug 30 18:51:19  2002
+************************************************************************
+
+Compiled dtkeden on Windows, fixing minor problems along the way.  A
+major problem remains: the server is killed with signal 11 when a
+client logs in.  When run under a debugger, this problem does not
+occur.
+
+
+************************************************************************
+1.43   [Ashley] Monday August 19 20:56:44 BST 2002
+************************************************************************
+
+Implemented ipopen on Mac OS X also (pseudo-terminals on BSD require a
+different approach to SVR4).
+
+Added regmatch() and regreplace() regular expression functions to
+Eden, using the PCRE (Perl Compatibile Regular Expressions) library.
+regmatch needs some rethinking to return more than one match.  Added
+documentation to eden.txt.  Examples:
+  writeln(regreplace("a", "z", "123a4567a89a0")); 
+  writeln(regreplace("(.)\\[(.)\\]", "ashfunc($1,$2)", "l[1] is l[2];")); 
+  writeln(regmatch("(?U)(.*)a(.*)$", "hallo chrisababe"));
+
+Added PCRE and Chris Roe to credits.txt.  Added more detail about
+authors of libraries.
+
+Periods at ends of sentences in eden.txt.
+
+Added debug(8192) for debugging the regular expression code (including
+the string memory allocation code).
+
+Generic framework for new notations implemented.  Call
+newNotation(name, switchProcPtr, transProcPtr) to install a new
+notation, which is implemented in raw Eden.  Agent-oriented parsers
+will be worked into this framework soon.
+
+Added %edensl notation: Eden Symbol Lists, where each element in a
+list resides in its own symbol, and can therefore trigger other items
+and have its own independent definition.  The notation is the same as
+normal Eden.  Call installedensl(); to install it, then use %edensl to
+switch to it.  It is incomplete: at present, list concatenation is not
+implemented and there is no way to reference the entire contents of a
+list.
+
+Implemented dirname and basename functions when missing (on Mac OS X)
+in Eden using the new regular expression functions.  This will fix an
+error that occurs when doing File -> Open on Mac OS X.
+
+Generic code for Interactive Process -based translators (ones that run
+in an external concurrent process, eg current arca and denota)
+implemented.  Call installIPTrans(name, path) to install a new
+IP-based notation.
+
+Got edensl working in tkeden (newNotation now adds a radio button etc).
+
+Made it possible for new notations to override the built-in ones (eg
+%donald, %scout).  Test with:
+  proc p {}
+  newNotation("%scout", &p, &p);
+
+Fitted Chris Brown's agent-oriented parser (AOP) into the new
+framework.  The 'notation' builtin command has been removed, and is
+replaced by the new installAOP(); Eden command, which has the same
+arguments as the old notation command, except that the first argument
+(the notation name) must now start with the '%' character.  Example
+modification required: change notation("eddi", "eddi_notation"); to
+installAOP("%eddi", "eddi_notation");.  No further modification should
+be necessary.
+
+Added %donald0 as an alias for %donald, making it possible to define a
+new notation overwriting the built-in %donald but still be able to use
+it.
+
+Added eden_debug_notations Eden variable, and documented in eden.txt.
+
+Added a notationStack.  This is used when a non-builtin notation is active
+and execute() or include() are called.  These commands cause arbitrary text
+to be interpreted by Eden, and the currently active notation is expected to
+be restored afterwards.  The notationStack handles this.  Note that parsers
+cannot reenter themselves (ie, during a call to their "parseChar" function,
+invoke a call to execute() or include() which includes a notation switch to
+their own notation).  Parsers can use other non-builtin parsers, but only
+if buffers are not shared between notations.  Note that the IP translators
+do not share buffers, but AOP translators do currently, and so
+AOP-implemented notations cannot be used within the implementation of
+another AOP notation.
+
+ipopen() now returns a sensible error message if the command passed cannot
+be executed or doesn't exist.
+
+installarca() now starts Arca as an IP translator (the version in
+arcaWard2002).  So Arca is now "integrated" into tkeden... but it runs
+slowly due to the one-second delay translator sychronisation problem.
+
+%edensl now makes a "whole" definition for each symbol list, which is
+defined to be the composite of the components, which were previously only
+accessible individually.  A triggered procedure is automatically introduced
+for each list which updates the "whole" list definition if the list length
+changes.  Concatenation is now handled in the standard Eden domain, using
+the "whole" value.  %edensl has problems remaining when translating procs
+and with quoted parameters.
+
+Merged in Meurig's changes to arca.eden (a few variables were not declared
+as auto).
+
+Integrated Arca and Denota translators with a new empublic installation for
+these.  In the DCS installation, these translators can be installed into
+ttyeden or tkeden by using installarca(); or installdenota();
+
+Documented the above new commands roughly in eden.txt.
+
+
+************************************************************************
+1.42   [Ashley] Wed Jul 10 20:34:37 BST 2002
+************************************************************************
+
+Minor coding style improvements in eden.eden.
+
+arca.lib moved to arca.eden.
+
+Added installarca() function to eden.eden.  Models using Arca should call
+installarca() once, before any Arca code is interpreted (rather like
+installeddi() and eddi code).  The Arca translator will hopefully
+eventually be integrated into tkeden in a similar fashion to eddi, but for
+now we only have an external translator (arcaBird1991), which must be used
+to preprocess files with arca code before tkeden can load it.
+
+Improved Donald openshape example in donald.txt.
+
+Figured out what arc parameters [p1, p2, a] are and documented in
+donald.txt.
+
+Added information about trace() to eden.txt.
+
+Added info about errors from fopen to eden.txt.
+
+Added Eden ipopen(), ipclose(), fdready(), rawread() and rawwrite()
+functions in order to implement external translators in Eden.  Documented
+in eden.txt.
+
+Removed traces of (commented out) kbhit() implementation, as fdready() does
+this job and actually works.
+
+Removed "ghost white" from rgb.txt.
+
+Checked into CVS.
+
+
+************************************************************************
+1.41   [Ashley] Friday May 24 16:55:49 BST 2002
+************************************************************************
+
+Fixed Scout image scaling for attributeexplorernnRoe2000: scaling by an
+integer size is now handled by Tk, which should work on all platforms.
+Non-integer scaling is handled by the external pnmscale utility, which
+might not exist on all platforms.
+
+Added note to Donald Quick Reference about arc's strange syntax (which
+doesn't match circle, rectangle etc.
+
+Added section numbering and contents information to quick reference guides.
+
+Eden modulus operator (%) now works on real numbers as well as integers.
+
+Added note to Eden Quick Reference about math functions returning floats.
+
+Added 26 new functions defined by Chris Roe to eden.eden.  They are: max,
+min, sum, average, abs, nthroot, factorial, product, sign, even, odd,
+mround, sumsq, trunc, combin, ceiling, floor, degrees, radians,
+rounddigits, gcd, lcm, variance, stdev, sort, median.  Each is listed below
+with the parameters that should be passed and some examples of how they can
+be used.  In all the examples the list a = [3,4,5,6];
+
+  max(number, ...) or max([list of numbers]) : returns the maximum of the 
+    numbers
+  e.g max(1,2)=2, max(a)=6. 
+
+  min(number, ...) or min([list of numbers]) : returns the minimum of the 
+    numbers
+  e.g min(1,2)=1, min(a)=3. 
+
+  sum(number, ...) or sum([list of numbers]) : returns the sum of the
+    numbers
+  e.g sum(a)=18, sum(2,3,4)=9. 
+
+  average(number, ...) or average([list of numbers]) : returns the average
+    of the numbers
+  e.g average(a)=4.5, average(7,9,11)=9. 
+
+  abs(number) : returns number if > 0, otherwise returns -number 
+  e.g abs(-7)=7, abs(2)=2.
+
+  nthroot(number,n) : returns the n'th root of the number given
+  e.g nthroot(4,2)=2, nthroot(81,4)=3.
+    **There may be some problems with precision of the answer with large n
+      due to the C library function used. **
+
+  factorial(number) : returns the factorial of the number given
+  e.g factorial(4)=24, factorial(-2)=@.
+
+  product(number, ... ) : returns the numbers passed multiplied together
+  e.g product(2,3)=6, product(a)=360.
+
+  sign(number) : returns -1 if number is < 0, 0 if number = 0,
+    1 if number > 0
+  e.g sign(4)=1, sign(-230.2323)=-1. 
+
+  even(number) : returns the nearest even number to the number given
+  e.g even(4.5)=4, even(5.5)=6.
+
+  odd(number) : returns the nearest odd number to the number given
+  e.g odd(4.5)=5, odd(3.5)=3.
+
+  mround(number,multiple) : returns the number rounded to the nearest
+    multiple of the given multiple
+  e.g mround(62,6)=60.
+
+  sumsq(number, .. ) or sumsq([list of numbers]) : returns the sum of the 
+    squares of the numbers passed
+  e.g sumsq(2,3,4)=29, sumsq(a)=86.
+
+  trunc(number) : returns the integer part of the number given
+  e.g trunc(4.56)=4. 
+
+  combin(total,n) : returns the number of ways n numbers can be picked from 
+    total number of items
+  e.g combin(4,2)=6. 
+
+  ceiling(number,multiple) : returns the number rounded to the nearest
+    multiple of the given multiple that is greater than the number
+  e.g ceiling(62,6)=66.
+
+  floor(number,multiple) : returns the number rounded to the nearest
+    multiple of the given multiple that is lower than the number
+  e.g floor(64,6)=60. 
+
+  degrees(angle) : returns an angle given in radians with its equivalent in 
+    degrees in a range 0-360
+  e.g degrees(PI)=180.
+
+  radians(angle) : returns an angle given in degrees with its equivalent in 
+    radians in a range 0-2*PI
+  e.g radians(180)=3.14...
+
+  rounddigits(number,digits) : returns the number rounded to the specified 
+    number of digits
+  e.g round(123,2)=120, round(123,1)=100, round(123.232,4)=123.2.
+
+  gcd(number, ...) or gcd([list of numbers]) : returns the largest number
+    which will divide exactly into all the numbers passed
+  e.g gcd(2,6)=2, gcd(6,9,24)=3, gcd(3,7,24,28)=1, gcd(a)=1.
+
+  lcm(number, ...) or lcm([list of numbers]) : returns the smallest number
+    that all the numbers passed will divide exactly into it
+  e.g lcm(8,12)=24, lcm(4,6,8)=24, lcm(a)=60.
+
+  variance(number, ...) or variance([list of numbers]) : returns the
+    variance of the numbers passed or the list of numbers passed to it
+  e.g variance(23,34,46,43)=80.5, variance(a) = 1.5.
+
+  stdev(number, ...) or stdev([list of numbers]) : returns the standard 
+    deviation of the numbers passed or the list of numbers passed to it
+  e.g stdev(23,45,67)=17.96..., stdev(a)=1.22...
+
+  sort([list of numbers], direction) : returns the list of numbers
+    sorted. the direction parameter should be 1 to return an ascending
+    list, 2 to return a descending list
+  e.g sort(a,2)=[6,5,4,3].
+
+  median([list of numbers]) : returns the median element of a list of
+    elements, those elements do not need to be in any sorted order
+  e.g median(a)=4.5.
+
+These functions have been tested, but there may still be some bugs in some
+of the routines. Please email croe@dcs if you find any problems with the
+routines. Most of the functions do not perform any error checking, they
+assume you are providing a valid list of parameters.
+
+Added two more functions from Chris Roe, inspired by functions from
+complexGardner1999:
+
+  randomise() : seeds the random number generator with a random number
+
+  rnd(number) : returns a random number between 0 and the number. Note
+    that both 0 and number are included in the range.
+  e.g rnd(1234)=567, rnd(9)=4.
+
+Lack of specification about rand() range documented in eden.txt.
+
+Added rgb2color and rgb2colour functions to eden.eden.  Examples of use:
+
+  %donald
+  line l
+  l=[{10,10}, {200,200}]
+
+  %scout
+  string g;
+  window ash = {
+    type: TEXT
+    string: "Ash"
+    frame: ([{10, 10}, {100, 100}])
+    bgcolor : g
+  };
+
+  screen=<ash>;
+
+  %eden
+  g is rgb2colour(ri,gi,bi);
+  A_l is strcat("linewidth=5,color=", g);
+  ri=0;gi=10;bi=255;
+
+Added Help->Colour names, which contains the information from the file
+/usr/openwin/lib/X11/rgb.txt and some help about how to use colours in
+Donald and Scout.
+
+Added small amount of detail about EOF to Eden fgets file function in
+eden.txt.
+
+
+************************************************************************
+1.40   [Ashley] Wed Apr 17 11:47:12 BST 2002
+************************************************************************
+
+A few silly mistakes in the reimplementation of mouseClick observables (in
+1.39) fixed.
+
+The multiple backups of the ~/.tkeden-history file added in 1.12 caused
+problems with multiple concurrent instances of tkeden running in the same
+user account with an NFS mounted home directory: machine 1 shifts history
+files, starts to use tkeden-history, machine 2 shifts history files,
+machine 1 gives stale NFS handle error.  Changed from renaming files to
+shift them to copying instead.  This means all the tkeden-history files
+will have the same file date, making it more difficult to find the relevant
+data when grubbing around in the history files, but it is possible to run
+multiple tkedens from the same account without problem.
+
+
+************************************************************************
+1.39   [Ashley] Mon Apr 15 20:19:51 BST 2002
+************************************************************************
+
+Reorganised descriptions of file handling functions in eden.txt slightly.
+
+The fix added in 1.37 which gives an error message on an attempt to
+eval() a local variable is now extended to attempts to reference the
+local variable $.
+
+The new builtin Donald reflect function was not working when given an
+openshape and a line: the parser was expecting it to return an
+openshape due to a missing break in Donald/check.c, whereas it
+actually (and should) return a shape.  Fixed.  Also added an extra
+test and error message to open2shape, and fixed donald.txt, which
+implied that rot, scale, reflect etc only take shapes, whereas in fact
+they take any Donald type.
+
+Optionally reinstated the "VB-like" feature of mouseClick observables
+removed in scout.init.e 1.11 (Eden version 1.17).  To turn this old feature
+back on again, do "tkeden_vbfeatures=1;" in Eden.  This is for use in
+getting old models to work only: new models should not use mouseClick and
+other "VB-like" features as they have been found in general to create more
+problems than they solve currently.
+
+
+************************************************************************
+1.38   [Ashley] Fri Mar  1 23:31:32 GMT 2002
+************************************************************************
+
+Fixed an inconsistency: query (?) previously ommitted the semi-colon after
+a procedural variable.  Now the output from ?a; will show a semi-colon
+after both procedural and formulae variables.
+
+Added Eden stat() function, which provides access to meta-data about
+files (modification times etc).
+
+Updated fgets() documentation in eden.txt.
+
+Changed filenames in lib-tkeden to use the new extension names: .eden etc.
+Renamed macro.e to eden.eden, which is now loaded at startup (if it can be
+found).  Removed eddipf.e file -- the text of this is now included at the
+start of eddi.eden.
+
+Added Eden symboldefinition function, which is intended to fix problems
+with the data returned by symboldetail() and relatives, as it returns the
+definition of an Eden symbol in a form that can be fed back to Eden using
+execute(), todo() etc.
+
+Bug fixed in agent-based parser: characters can now be escaped in strings:
+TEST << ["oh \"quote\""]; is now valid.
+
+Changed occurrances of "definitive parser" in this text to the more correct
+"observation-oriented parser", as the parser makes little use of
+definitions.
+
+Added copyproc() and showpara() procs to eden.eden.
+
+Introduced an optimisation that will allow the use of a particular list
+append idiom on long lists.  The list concatenation operator is limited in
+the resultant size of list that it can produce, meaning that 'l=l//[q]'
+would fail with a stack overflow error if l was larger than 1023 items.
+This particular operation is now optimised (by additions to the parser and
+virtual machine) to the effect that 'l=l//[q]' is effectively translated
+internally to 'append l, q'.  Note that the value of the expression
+'l=l//[q]' is now @, not the value of the new list as previously, due to
+space limitations.  A variation on the problem, 'l=[q]//l', is not
+optimised as it is a less common idiom.  The optimisation also copes with
+strings, although the concatenation is not done in-place in this case.
+This change should allow EDDI to cope with much larger results (eg large
+joins).
+
+Added some more possibilities to debug().  debug(256): prints calls to
+execute, debug(512): prints calls to func / proc / procmacros with their
+arguments and return results (including indentation to show level of
+nesting), debug(1024): prints VMWRIT output (when opcodes are created in
+the VM for later execution).  This last is also a part of the debug(1)
+output, which is generally far too detailed to be useful.
+ 
+Modularised tkeden notation radio button code.  Added a Tcl proc named
+"removeNotationRadioButton" to allow scripts to remove the radio
+button for a notation in order to hide the notation's existence (note
+the notation itself is not actually removed).  An example of use:
+%eden
+tcl("removeNotationRadioButton donald");
+
+Added printstdout C function for use from gdb.
+
+Fixed commas within strings in EDDI: T << ["h,w"]; is now possible
+(previously the comma would have caused this to be recognised as two
+attributes).
+
+Fixed bug in EX/script.c: a textual script store was not being resized
+correctly when given a large amount of script.
+
+A fix was introduced in the last version to cope with the fact that
+TEXTBOXes are a different kind of Tk widget to the other types (TEXT,
+DONALD, ARCA, IMAGE).  The previous fix was not correct: the code which was
+enabled was actually handling frames (lists of boxes).  The obtuse and
+lengthy DisplayScreen procedure is now more understood and some comments
+have been added, as well as a more reasonable fix for this problem.
+
+Previously, Eden floating point values that were very close to their
+integer equivalent would be printed out as integers by query (?), writeln
+etc.  169.9999 would be shown as 170, for example.  Now, floating point
+values are printed out at the precision available on the machine.
+
+Added Chris Brown to credits.txt.
+
+dtkeden bug fixed, which was introduced in release 1.21 (builtin.c 1.39)
+with the introduction of the 'procmacro' facility.  When defining a
+procedure or function on the server, the redefinition sent to the client
+was corrupted: func definitions had 'proc procmacro' appended, procs had
+'procmacro', due to some missing break statements in a switch.
+
+PI was previously undefined in ttyeden (as it was part of Donald), and
+defined to only 7 significant figures.  Made PI a standard Eden definition,
+set from the more precise value available on the system from <math.h>.
+Added information to Eden and Donald quick reference guides (eg note that
+in Donald, it is referred to as lower case pi).
+
+Added Chris Roe's round() function to eden.eden.
+
+Added documentation for macro, copyproc, showpara, round and eval to the
+Eden quick reference.
+
+Added documentation about ~/x, /x etc to Donald quick reference.
+
+Added debug(2048) to debug the Donald parser.  Added debug(4096), which
+causes tkeden to print errors on stderr as well as in the error window.
+
+Donald parser was having problems on UNIX when reading files with DOS line
+feeds.  In particular, within x NEWLINE { } was failing, because DOS line
+feeds are CR (\r), LF (\n), which was being treated as two NEWLINEs.  The
+Donald lexer now ignores a \n which follows a \r.
+
+Optionally reinstated some code to do with back-ticks which appears to make
+the project timetable model work.  Enable this hack by setting the Eden
+variable eden_backticks_dependency_hack to 1.  Exactly what the hack does
+is not yet well understood, so it is optional for the moment.
+
+
+************************************************************************
+1.37   [Ashley] Tue Feb 19 17:29:00 GMT 2002
+************************************************************************
+
+Sync'd code with CVS.
+
+Attempts to eval() a local variable now give an error message instead
+of a crash.  Eg 'func t { auto i; i=2; writeln(eval(i)); }'.  eval is
+defined to give the value of a variable at point of definition.  This
+is at the entry of the function in this case, when the function is not
+being evaluated, and so any local variables as yet have no value
+(although we do know that they are local variables).  Hence an error
+is appropriate.
+
+Mac OS X tkeden port is progressing.  Now automatically locates
+lib-tkeden, which is situated within the Resources directory of the
+application bundle.
+
+Bug fixed in call_float (which is where real-valued C library
+functions are called) on Mac OS X.  sin(3.14159/2.0) would return
+0.909297, not 1.  In 1.19, a change was made: all values passed to a C
+library functions declared as SameReal (which are functions that
+return a real value, eg sin, cos) are passed double values -- integer
+parameters are cast to double type before passing.  Now a more subtle
+internal change has been added to this: the C library is now given an
+array of doubles, not ints.
+
+Added debug(128) option for debugging calls to Tcl_EvalEC and
+Tcl_GlobalEvalEC.  Added information about arguments to debug to eden.txt.
+
+Added an additional example to scout.txt.
+
+Fixed a bug where redefining the Scout screen to one that included
+TEXTBOXes might fail.  When the screen variable is changed, the
+corresponding Tk widgets are modified in place if possible, not destroyed
+and recreated from scratch.  Scout windows of type TEXT, DONALD, IMAGE and
+ARCA all seem to use the Tk canvas widget.  TEXTBOX however uses the Tk
+text widget, and so when a window changes type to and from TEXTBOX, the
+corresponding Tk widget must be destroyed and recreated, else various Tk
+error messages occur when the widget attributes are changed.  DisplayScreen
+is now nearly unmaintainable, being 400 lines of obtuse C code.  It seems
+to contain some code which appears to try to manage the above situation.
+It seems to have been failing due to two erronous "+1"s, which are now
+commented out.  Further use may reveal the original intention of these
+"+1"s and require a different solution.
+
+
+************************************************************************
+1.36   [Ashley] Thursday November 29 19:26:19 GMT 2001
+************************************************************************
+
+Using the system's close window button on the View Eden Definitions window
+previously caused a Tcl/Tk error, as I'd changed the menu code for this
+window, but not the close window code which relies on it.
+
+Updated EDDI files from Meurig's current version a little: new version of
+deps.e and new file newaddvals.e.  Also cleaned up my modifications a
+little.
+
+
+************************************************************************
+1.35   [Ashley] Tue Nov 20 13:22:19 GMT 2001
+************************************************************************
+
+Merged in Chris Roe's Donald reflect primitive as a new Donald built-in.
+Added one line giving the syntax to the Donald Quick Reference on the Help
+menu.
+
+Fixed ttyeden on Darwin (Mac OS X).  Now compiles and works OK (were
+problems with header files etc).  No dirname and basename functions.
+
+Fixed implementation of Eden str() function when dealing with lists.
+Previously it had the same fault that was corrected in printing (writeln
+etc) in 1.29: strings and chars in lists were converted by str and were not
+given surrounding quotes.  Now this example functions correctly:
+  1|> l=["hi",'h',5,[6]]; 
+  2|> writeln(l);
+  ["hi",'h',5,[6]]
+  3|> writeln(str(l));
+  ["hi",'h',5,[6]]
+
+
+************************************************************************
+1.34   [Ashley] Thursday November 15 20:03:13 GMT 2001
+************************************************************************
+
+EDDI in dtkeden server previously printed "Unrecognised EDDI statement" on
+stdout if the server's notation was set to EDDI and a client started or
+finished or if broadcast mode was selected.  This problem was narrowed down
+to the EDDI parser not understanding virtual agent commands: a line
+containing '>>' is executed in the these scenarios.  The EDDI parser is now
+fixed so that it ignores statements that begin with the virtual agent >>,
+<>, ><, << and >~ prefixes.
+
+
+************************************************************************
+1.33   [Ashley] Thursday November 15 16:52:38 GMT 2001
+************************************************************************
+
+Improved MAKING.A.RELEASE checklist.
+
+The scale function in donald.init.e previously ignored arcs.  Chris Roe
+fixed this for his COG model.  This improvement is now merged into tkeden,
+so Donald should now scale arcs.  However, Chris' fix may be a slight fudge
+as it apparently doesn't scale the arc's "bend".
+
+
+************************************************************************
+1.32   [Ashley] Fri Nov  2 12:24:37 GMT 2001
+************************************************************************
+
+Typo fix in builtin.h and builtinf.h
+
+
+************************************************************************
+1.31   [Ashley] Fri Nov  2 11:58:24 GMT 2001
+************************************************************************
+
+Change to Meurig's newpivctn.e EDDI file.
+
+The prompt in ttyeden was previously incorrect after including a script
+file with a change of notation (or providing a -e option with a change of
+notation).  The machine would actually revert to accepting Eden (incorrect)
+but the prompt would still show the other notation (actually correct).
+Given the time limitations today, I have made the easier fix, which is to
+fix the prompt to correctly show the state of the machine.  As the
+semantics of an include() (or mention of a script file on the command line)
+is direct inclusion of that file in the input stream (rather than a
+"procedure call"), the machine should actually stay in the new notation (ie
+notation changes should persist across EOF).  This will however require
+some restructuring of the lexer.  This problem does not occur when typing
+input directly, as stdin never gives EOF.  tkeden does not have this
+problem as notation changes are handled by functions in EX (which is not in
+ttyeden).
+
+
+************************************************************************
+1.30   [Ashley] Thu Nov  1 19:31:37 GMT 2001
+************************************************************************
+
+When using eager() in a tight Eden loop to modify a Sasami display, this
+previously caused a Segmentation fault.  The crash no longer occurs, but
+the Sasami display is corrupted.
+
+Improved debug(2) output (RunSet debugging).  Test with (eg):
+  writeln(1);
+  todo("writeln(2);");
+  todo("todo(\"writeln(3);\");");
+
+Eden include() now stores number of parameters (file names) in a C stack
+variable, rather than relying on being able to read it from the Eden stack
+after each include.  This should stop a few crashes due to nonsense values
+being read from the Eden stack.
+
+tkeden now correctly appends information to the history about the files
+stated for execution on the command line on UNIX.  (On Windows,
+"cd(dirname(filename))" is done for each file before execution of
+"include(basename(filename)", which appears in the history).  Both
+platforms now have a comment appended in the history which states the files
+were invoked from the command line.
+
+It was previously possible for the tkeden prompt (eg "Enter Eden
+Statements") and radio buttons to get out of synch with the actual current
+notation.  Specifically, the Eden include() function, invocation of files
+mentioned on the command line and observation-oriented parser generator may
+have had this problem.  This problem was not observed on Windows (for some
+reason).
+
+Added installeddi() Eden procedure, which adds the eddi parser to the
+environment when invoked.  Added this info to the Eden Quick Reference.
+
+The Update button in the View Eden Definitions window now keeps the
+vertical scrollbar position instead of resetting it to the top of the
+document each time it is pressed.
+
+Added an Edit menu with Copy, Cut, Paste options to the View Eden
+Definitions window.  This required reworking of the Eden Definitions
+menubar.
+
+Added information about return codes of forget() and type casting to the
+Eden Quick Reference.
+
+Tcl now sets the prompt label using the correct case of "statements" (which
+is later overwritten by C code anyway..., but which can be observed when
+running on a slow machine).
+
+The Eden forget() function can now take a pointer.  However it will never
+return 1 (for "not found") as use of a pointer reference causes Eden to
+create the pointed-to item (as @) if it does not already exist.
+
+Added slightly more detail to Eden quick ref about nested comments.
+
+There was a bug in the one-line comment (##) code, which caused the next
+line to be ignored if the comment characters were followed immediately by a
+newline.
+
+"Merged in" Meurig's eddi changes by concatenating them into one long
+eddi.e file.
+
+
+************************************************************************
+1.29   [Ashley] Tuesday October 16 19:22:15 BST 2001
+************************************************************************
+
+Fixed bug introduced into ttyeden in 1.27.  The fix was introduced as
+ttyeden didn't seem to deal with items in the todo() list correctly.  The
+"fix" caused clearGarbage to be called at incorrect points, meaning Datums
+that were actually in use were freed: writeln("what the ****"); would print
+"(type=-14907, val=-976894523)" (as the string Datum was corrupted).
+checkRunSet and the associated clearGarbage, incGarbageLevel are now only
+done in one instance of print_prompt_if_necessary.  This may reinstate the
+problems with todo() that the "fix" was introduced to solve, but there was
+no clean test case for it, and I no longer have Michael's ttyeden model
+code to test.
+
+Changed printing of strings and chars.  Strings are now output with
+surrounding double quotes, chars are output with single quotes, unless
+their output was caused by writeln (in which case the contents of the
+string is usually required).  This should help debugging (the ? query
+operator now shows the type more clearly) and reflection (when Eden code
+observes Eden code, perhaps re-executing it).  writeln on a list always
+shows quotes, as it is also surrounded with list constructors and is
+therefore a "reflection" type of output.
+
+Fixed a bug introduced when improving the Donald error output.  If Donald
+was "within" a context, this was not reset (an oversight introduced when
+adding this improvement).  There was no way to return to the root context
+(as the Donald parser looks for "within { ... }" and will not accept "}"
+without the preceeding tokens).  The context is now correctly reset and
+notice is given of this in the Donald error message.  For example:
+  %donald
+  openshape ash
+  within ash {
+    error
+
+
+************************************************************************
+1.28   [Ashley] Monday October 15 16:23:30 BST 2001
+************************************************************************
+
+Fixed 'invalid command name: "tcl_wordBreakAfter"' error on Windows after
+Michael found how to reproduce it (double click in the input window).  The
+problem was caused by the ommission of the tclIndex file from the Windows
+distribution (quite a few of the Tcl/Tk files are ommitted in order to save
+space).
+
+Files using DOS line-feeds (CR, LF: \r\n) in non-Eden notations (Donald,
+Scout, LSD, Sasami, custom) were causing errors when interpreted with the
+include() function (interpreting the code via the input window: File ->
+Open was OK as Tcl reads the file and seems to correct the line feeds).
+This is a very old bug: a problem even in tkeden-dec151997.  Now fixed.
+
+
+************************************************************************
+1.27   [Ashley] Thu Sep 27 18:44:13  2001
+************************************************************************
+
+Now guessing location of library files directory on Windows in ttyeden
+(previously was only doing this for tkeden).
+
+eddi.e now tries to find eddipf.e in TKEDEN_LIB, not the current
+directory, so the command given below for starting tk/ttyeden with the
+eddi parser should now work even if eddipf.e is not in the current
+directory.
+
+File -> Execute -> eddi.e now works.  Previously any Tcl code which
+required access to a global Tcl variable would fail when run from File
+-> Execute (as the Tcl 'eden' command was run within the access scope
+of the Tcl 'include' procedure).
+
+Moved checkRunSet into print_prompt_if_necessary (ttyeden only).  This
+fixes a bug where ttyeden didn't seem to deal with items in the todo()
+list correctly.
+
+
+************************************************************************
+1.26   [Ashley] Thursday September 27 12:49:42 BST 2001
+************************************************************************
+
+Chris Brown's fix for strings containing single-quotes
+
+ttyeden now shows -l setting on -v.
+
+Fixed bug where %eddiarrgh would be a valid notation change.  Other
+built-in notation changes with additional postfixes (eg %lsdarrgh) should
+still be valid, but notations in the observation-oriented parser now
+require an exact match.
+
+Fixed bug where a notation starting with an uppercase letter would cause an
+error in tkeden (as Tk doesn't seem to allow window names that start with
+uppercase letters).
+
+Including the eddi observation-oriented parser into the standard
+distribution.  Load it with the Eden code
+'include(getenv("TKEDEN_LIB")//"/eddi.e");'.
+This can be done from the command line:
+tkeden -l lib-tkeden -e 'include(getenv("TKEDEN_LIB")//"/eddi.e");'
+(this also works with ttyeden).
+
+
+************************************************************************
+1.25   [Ashley] Friday September 14 17:11:49 BST 2001
+************************************************************************
+
+Fixed minor bug preventing tkeden compiling without Sasami.
+
+Made it possible to use the observation-oriented parser within ttyeden.
+The observation-oriented parser requires the file trans.e within the
+library files directory, and so the -l argument now applies to ttyeden.  If
+the -l argument is not given, ttyeden still operates, but the
+observation-oriented parser is not available (functions defined in trans.e
+are not available - likely error messages include "...'ident_ex'
+needed...").  The ttyeden prompt now includes the name of the current
+notation if this is not Eden, for example: "%eddi 4|>".  Fixed many
+input-reading bugs to allow this to happen correctly (to do with EOF
+handling, prompt printing, line termination etc).  There may still be some
+more bugs as the code is messy (Eden/lex.c really needs a rewrite in many
+places) and it is difficult to test all possible conditions.
+
+Fixed a memory bug in tkeden's prompt ("Enter xx statements:") setting
+code.
+
+
+************************************************************************
+1.24   [Ashley] Wed Aug 15 16:15:34  2001
+************************************************************************
+
+Eden "system" command now defined as a built-in, meaning that it
+should now work in a non-root virtual agent context (previously, the
+tilde "root virtual agent" specifier would have needed to be appended,
+ie "~system").
+
+The cd(dirname(fileToInclude)) hack introduced in 1.17 which makes it
+possible to drag a model start-up file onto the tkeden icon on Windows
+(the hack sets the working directory such that the other model files
+can be found) was causing problems on UNIX when people start the tool
+with a command line including relative pathnames, so this hack is now
+only used on Windows.
+
+Chris's observation-oriented parser is now not compiled into ttyeden.  It
+could be, but the executable then needs to be able to find trans.e and the
+-l option would then become mandatory for ttyeden, meaning it wouldn't be
+just a simple stand-alone executable.  Since the current notation
+development using the parser seems to be proceeding using tkeden
+functionality, ommitting the parser from ttyeden shouldn't cause too much
+of a problem for now.
+
+
+************************************************************************
+1.23   [Ashley] Monday August 13 18:18:58 BST 2001
+************************************************************************
+
+Chris's updates to his observation-oriented parser: some functionality has
+been moved into Eden - particularly the decision about when to start
+parsing a complete 'chunk', meaning that a parser for a language with
+definitions spread across several lines is now possible.
+
+
+************************************************************************
+1.22   [Ashley] Friday August  3 16:49:31 BST 2001
+************************************************************************
+
+Merged in Chris Brown's observation-oriented parser.  This may cause
+problems with some models as the additional Eden code which implements the
+observation-oriented parser may use namespace that is already used by some
+other models.
+
+Made installnot create a new radio button on the interface for a newly
+installed notation.
+
+Added 'notation' to eden.txt quick reference guide.
+
+
+************************************************************************
+1.21   [Ashley] Thursday August  2 18:02:12 BST 2001
+************************************************************************
+
+Fixed CVS/Root files which contained cssbz@127.0.0.1... instead of the
+correct cssbz@cvs.eden.sourceforge.net...
+
+Undoing a change I made in 1.19 which was to rename all upper-case
+filenames, as this will cause too much hassle with CVS.
+
+Compiled Tk Img package at DCS and made edenio.tcl load it if it is
+available.  This gives Scout the ability to load images in the formats BMP,
+XBM, XPM, GIF (with transparency, but without LZW), PNG, JPEG, TIFF and
+postscript (previously it could only handle the Tk default of PPM/PGM and
+GIF).  Updated various documentation with credits, installation and usage
+information.
+
+Help -> About tkeden now shows patch level of Tcl and Tk (eg 8.3.3 instead
+of 8.3), and also whether the Img package is available.
+
+Sync'd all the code with CVS again.  Added 'setcvstag' target to Makefile
+to enable recording of releases in CVS.
+
+
+************************************************************************
+1.20   [Ashley] Wed Jul 18 18:26:59 2001
+************************************************************************
+
+Added ENTSTK to possible debug() output
+
+reset_stack and reset_compiler_status now give debug output
+
+Fixed "bug42": introducing the screen_width etc definitions in 1.19 caused
+a segv after an error in some circumstances (in particular, when the user
+made an error in a file that they included from a file after a %scout
+line).  I had previously worked around this problem by leaving out a Tk
+"update" after adding text to the error window.  If an "update" is not
+performed at that point, the error window appears to freeze during a series
+of repeated errors.  Adding this update is in fact a new feature, but
+adding it revealed the above problem - that the error handling code was
+causing some Eden code to run with the intent of updating the screen_width
+definitions, and this foobarred the stack state (which is actually above
+the current stack pointer and so supposedly "discarded", but is still
+required after an error condition).  Now the machine state is reset after
+the call to the error handling code, meaning the error handling code uses
+stack space above the state that must be left undisturbed.  Limited testing
+so far seems to show that this fixes the problem.  Now error messages
+should be visible in the error window even if Eden is in a tight loop
+(which is especially important now that complete error messages are not
+logged to a file).
+
+Added 'tkwait visibility' to OpenDisplay procedure, which means that any
+Scout screens should be shown even if Eden goes straight into a tight loop
+when starting up.
+
+Added to debug(2) output
+
+Fixed bug in error line buffer implementation.
+
+The 'rtos' function in donald.init.e had a bug causing memory to be
+overwritten.  The first argument to sprintf must first be initialised to a
+string of length the same size or longer than the string to be written into
+it.  Added warnings to eden.txt documentation.
+
+Proper error message if scoutScreenInitOpen can't be found (ie we are using
+the wrong -l settings).
+
+Character number reported on error now starts at 1, not 0.
+
+Donald dashed and dotted lines will now appear solid if your Tk
+version is less than 8.3 (the old dash_bitmap hack was removed in
+1.19, which caused these lines to not appear at all).  So we now have
+a dashed/dotted lines solution which should work reliably on all
+platforms and fail safe to solid if the platform cannot cope.  (Note
+that the current Windows distribution uses Tk 8.0 and so dotted lines
+will not appear there).
+
+
+************************************************************************
+1.19   [Ashley] Sat, 14 Jul 2001 21:35:52
+************************************************************************
+
+Previously, calling touch() with a non-pointer (eg touch(me)) caused a
+Segmentation Fault and crash.  Now it gives an error.
+
+Removed code from scout.init.e which fudges heights and widths to work with
+"buggy Tk" (version 4.0b3? - very old now).
+
+Added warningf C function (using varargs) to enable more complex warning
+output.  Made warning use it.
+
+Improved error messages in the C-implemented Tcl commands, eg eden, todo,
+evaluate etc (see EX/ex.c).
+
+Scout now 'knows' the size of each display.  Implemented some Tcl / Eden
+which defines Scout integers, named displayname_width and
+displayname_height which are the width and height of the display window.
+These observables are redefined when the window is resized by the user.
+This should make it possible to centre things within Scout windows, etc.
+This particular interface doesn't fit cleanly with the rest of Scout -
+perhaps this information should be obtained from Scout using
+displayname.width etc, but this would require more work.  This hack will do
+for the moment - beware of future changes if you use it.
+
+Defined the new functions cd, cwd, dirname, basename as built-in functions
+so that when we are not in the root VA, the agent name does not get
+prepended.  Unfortunately this means that the user cannot redefine the
+initial versions of these functions.
+
+Added Scout DFwidth and DFheight parameters describing the width and
+height of the screen to be opened (meaning we can redefine these
+before screen is opened...)
+
+Calling the Eden tcl() function with @ now results in an error
+message, not a Segmentation Fault.
+
+Control-C twice to kill tkeden on Linux now works correctly and
+doesn't go into a loop.
+
+Figured out Donald {distance @ angle} operator and added to (the
+previously extremely poor) documentation (also documented that Eden
+sin and cos require radians...)
+
+Fixed a bug involving passing strings with " characters in text boxes
+to Scout (a Tcl problem).
+
+Find... didn't work on Linux as \c was being interpreted as an escape
+sequence there (not sure what it is supposed to be interpreted as).
+Quickly fixed by using marks instead - not sure if this is a good
+solution.
+
+Made a separate Errors window and separated out history entries from
+errors.  Now no longer a need to surround errors with comment
+characters.  Errors from all notations should now appear in a uniform
+and more helpful way.
+
+Adding the startup stuff provided on the command line (eg -e,
+filenames...) to the history.
+
+Fixed (well, avoiding) a bug which caused tkeden to fail with Seg
+fault after encountering an error during initial startup
+(specifically, it seems to appear when the user makes an error in a
+file that they have included from a file included from a file, after a
+%scout line, all of which appears to be causing the errorf longjmp to
+jump to the include() C function (which it shouldn't) which then
+dereferences paracount and gets a nonsense value since there is
+nothing on the stack at that point).  Somewhat obscurely, removing the
+Tcl "update" call after the error (which I inserted to get the display
+of error messages working OK during an error loop) causes this to work
+OK - eh?!
+
+The Tcl "raise" procedure (which brings a window to the front) appears
+to be causing problems on Linux, so I've redefined it to blank for the
+moment.
+
+Added what was encountered to the information given on a parse error
+(previously just printed what was expected) from translators using
+bison.simple (Eden, Donald, Scout).
+
+The error location indicator (^) now takes account of tabs in the
+input line, so points to the correct place if tabs are used.
+
+Fixed a bug where the heap was not freed when a empty statement list
+was used.  Eg 'while (f()) {}' would cause heap overflow if f() did
+not return false fairly quickly, as the arguments to f() (a list of
+length 0) were added to heap on every call.  The heap space would
+normally be reclaimed after execution of the first statement in the
+loop, but not in this circumstance.
+
+Added debugging output to internal C malloc function.  Enable with
+debug(64);
+
+Circle colouring in Donald has been reported previously as not
+working.  It is still working - at some point in the past, the
+attribute name required changed from 'color' to 'outlinecolor'.
+
+The -e command line option didn't work correctly on Linux when it
+followed a filename (eg ttyeden errortest/args.e -e "writeln('n');"),
+as getopt on that platform permutes the contents of argv as it scans
+so that eventually all non-options are at the end.  Turned this
+behaviour off and -e now works correctly on Linux.
+
+ttyeden -u output was incorrect.
+
+C-lib "illegally typed" error message improved.
+
+Stack trace given for error messages now says "in ..." for first
+func/proc... rather than "called by".  This should help to understand
+where the error occurred, for example in the case where a proc/func
+etc tries to reference outside the parameter list - the location of
+the error was likely to be construed as the caller in the old error
+message style.
+
+Code that would have probably caused "called by action <rubbish>"
+fixed.
+
+Error message formatting improved where 'stack pointer was
+inconsistent' is mixed with an error message.
+
+Decided to remove 'stack pointer was inconsistent' notice as most of
+the time it simply seems to just add more noise to error messages -
+the pointer was inconsistent because an error occurred, I believe
+probably in all circumstances.
+
+Added an 'error number' identifier which shows up in the history and
+error windows, allowing us to reconcile the two together if need be,
+and as a reminder in the history file that the input caused an error.
+
+In 1.13 C-lib real-valued functions were modified to give an error
+when called with non-real parameters (before, they used to silently
+return strange values).  Now any integer values passed to one of these
+functions (eg sin, sqrt...) are internally cast to floating point
+before calling the C function, so that meaningful results are now
+obtained when calling these functions with integer values.
+
+Improved 'not read/write variable' error message (which happens in eg
+'writeln++' where writeln is not a local variable).  Now giving the
+name and type of the offending variable.
+
+arca.lib now uses a modern-style font name declaration, so has more
+hope of working on multiple platforms.
+
+Added '##' as a one-line comment to Eden.  The character sequence '##'
+now causes Eden to ignore input until after the end of the line is
+encountered.  The single '#' character cannot be used as a one-line
+comment token in Eden as '#' is already used to denote list/string
+length (and the C++ one-line comment '//' is also already used in Eden
+for list/string concatenation).  '##' comments can already be used in
+Donald, Scout and Sasami as those notations already implement the '#'
+one-line comment syntax.  '##' can therefore be used in any notation
+currently built-in to tkeden.
+
+'Error number' identifiers now inserted into history are now commented
+with '##', so that history can be re-run in tkeden with no
+modification.
+
+Turned filename completion (a function provided by readline when you
+press Tab) off in ttyeden.
+
+Readline now knows that the application name is ttyeden, so
+conditionals using this information are possible in ~/.inputrc (but
+this is currently untested).
+
+Fixed a bug in and improved the ttyeden prompt.  Previously, a comment
+would cause the prompt to fail to reset from the "waiting" prompt ("+>
+") to the usual prompt (":> ").  Now the prompt correctly resets, and
+there are multiple possible "waiting" prompts.  The usual prompt has
+been modified to make the difference between it and the "waiting for
+semi-colon" prompt clearer.  The new prompts are:
+ |>  - the usual prompt
+ ;>  - prompt when waiting for a semi-colon
+ |>  - prompt when waiting for a close-quote
+ *>  - prompt when waiting for a close-comment
+
+Reworked the tkeden previous/next history implementation added in
+1.13, which used a cyclic buffer to represent history.  This
+implementation wasn't the same as other implementations of history (eg
+in various shells) and caused the history to be overwritten after
+using Previous to "go back in time" and then continuing to make
+entries (overwriting history).  On inspection, other implementations
+of history seem to be simpler than this and "go back in time" only for
+the duration of the current entry.  tkeden now follows this scheme,
+retaining twenty items of history, and beeping if the user attempts to
+go beyond the recorded limits.
+
+Added Alt-p and Alt-n key shortcuts to tkeden for previous / next in
+history, as some configurations have no Meta key and
+Alt-Control-Up/Down is used by the window manager.
+
+Shift-Control-Tab was causing the entire menu bar to tear itself off.
+Fixed.
+
+Donald dashed and dotted attribute support reworked using the third
+party Tk "dash patch" which was finally merged into Tk in version 8.3.
+These attributes will not function if you are using earlier versions
+of Tk, but if you are, they are likely to function correctly (unlike
+the previous hack which involved 'stippling' the geometry with a dotty
+bitmap, which failed to function at certain angles on certain
+platforms).  This version of Tk does not seem to be easily available
+in cygwin and hence the PC port, but the previously hacked version
+didn't work on the PC anyway.  It seems that the attribute
+"linestyle=dotted" was not supported at all in the previous version
+(despite existing in the documentation) - it should work now.
+
+Renamed files with all upper-case names as they cause problems when
+they exist on a vfat (Windows) partition mounted from Linux.
+
+Checked out memory leak bug in COMICAL/ROADSYS, which was mostly fixed
+in 1.1 ("bug5").  There is still a small leak, but it looks like this
+is probably attributable to Tcl (specifically TclpAlloc).
+
+Added eden_prompt variable to ttyeden Eden which specifies whether the
+prompt will be displayed: 1 (default) means the prompt will be
+displayed, 0 means don't show the prompt.  The value can be modified
+directly or via the -n and -i command line options (which do correctly
+trigger any actions triggered by eden_prompt as they should).  Had to
+work around a bug in libreadline4 (reported to Debian as bug #105231)
+to get this to work.
+
+Bug fix: ttyeden previously would quit after two control-C presses, no
+matter how length a time interval between them.
+
+Bug fix: ttyeden does not now use readline if the current input file
+is a pipe (technically, ISFIFO), meaning that the 'old-style' pipeline
+translators still behave as they did.
+
+Removed some dead code relating to storage about input.  Reworked my
+line buffer (added for error handling) so that it resizes dynamically,
+meaning Eden once again has no line length limit (I unwittingly
+introduced one probably around version 1.13).
+
+
+************************************************************************
+1.18   [Ashley] Fri Jun 29 2001 5:30am :(
+************************************************************************
+
+Changed Scout "parse error" to something more informative.
+
+The 'sensitive' functionality added for Chris in 1.13 below is still not
+right, despite some more fixes in 1.17.  When 'sensitive' is used in a
+window in a virtual agent context, the ON, MOTION etc values were being
+prepended with an agent name, meaning their value was unknown, meaning that
+the parser moaned.  Changed these values back into items in the constants
+table, meaning that the VA name translation is not done.  Had to hack the
+values of these constants, given that Scout lacks a proper 'integer' type
+(they are actually 'double' - see below).  Now added an 'integerhonest'
+type, the tree constructor function of which actually takes an integer.
+The internal value is still stored as a double, as per Simon's original
+hack (which was added before the start of version control on this source).
+In summary: 'sensitive' now works in VAs, but Scout still needs un-hacking
+wrt the integer type.
+
+Renamed 'dummy.c' to 'nothing.c' as the configure script seems to keep
+removing it on Linux.
+
+Got dtkeden to compile on Linux (need different headers for MAXHOSTNAMELEN)
+
+Bug fixed: previously trying to File -> Open a file without an extension
+would lead to an attempt to load the filename with a .e extension.
+
+Documented font specifications in Help -> About Donald, Scout
+
+Updated Eden Quick Reference with a few more of the additions I've made.
+
+Changed default file extension in File -> Open etc to *, as none of our
+existing models use the .eden, .donald... extensions yet.
+
+Fixed a bug introduced in 1.17 where Scout windows always seemed to have a
+border.  This was actually due to yet another bug in my 'sensitive'
+reimplementation, which caused screen[n][14] (the sensitive attribute) to
+be defined as @ if it wasn't specified by the modeller.  Previously it
+would have been defined as 0 in this case.  Now it is defined as
+DFsensitive, which is zero by default.
+
+
+************************************************************************
+1.17   [Ashley] Wed Jun 27 2001 4am :(
+************************************************************************
+
+The Scout 'integer' type is actually more subtle than described below.
+Actually Scout has another type, 'real' (which is only mentioned in an
+example in the documentation).  Both 'real' and 'integer' are stored as C
+doubles, and have the parser identifier INTEGER.  When a Scout number is
+output to Eden, tests are performed to see if the decimal part is zero - if
+it is, then the number is output (mostly) as an integer.  We still need the
+'real' type, particularly when scaling images, and replacing this hack with
+a proper implementation of real and integer separate types would take more
+time than is available at present, so moving back to the previous (hacked)
+implementation.  This implementation causes problems when feeding numbers
+from Scout to some Eden functions, but this can be worked around in the
+models by casting to (int) when required.
+
+The 'sensitive' functionality added for Chris in 1.13 below was actually
+buggy (it was untested until now): the functions in scout.init.e were being
+passed the value of the pointer to the sensitive attribute, not the actual
+value.  This is now fixed, and the mouse / key Tcl bindings are now set up
+by one procedure in scout.init.e instead of two.  MOTION, ENTER and LEAVE
+will not work within TEXTBOXes for now, as some more work needs to be done
+on TEXTBOX first.
+
+_mouseClick ("VB-like"?) functionality removed from scout.init.e at the
+same time as above, as the use of this feature in models seems to cause
+more problems than it solves.  (Note: this will break some existing
+models).
+
+Minor bug fixed: errors from keyboard input in ttyeden would be reported as
+from file '@': now correctly from file "stdin".
+
+Added Eden cwd() function and cd() procedure.  The cwd() function is marked
+as out-of-date whenever cd is called, so the procedure
+'proc pcwd : cwd { writeln("cwd now ", cwd()); }', giving a UNIX shell-like
+prompt is possible.
+
+Added Eden dirname() and basename() functions, which give the containing
+directory and filename of a file path respectively.
+
+Now, for each initial file to load specified on the command line,
+cd-ing into the containing directory of each file before attempting to
+execute it.  This will leave the cwd set to the containing directory
+of the last file on the command line.  This is intended to make Eden
+include(...) calls in a script more effective if the tool doesn't have
+a sensible initial cwd (which is true on Windows most of the time).
+Some of the code for this trick is implemented in Eden, so that the
+cwd() function will be correctly re-evaluated when the cds are
+performed.  Note that it is possible to make Eden appear in the Send
+To right-button menu in Windows by setting up a short-cut to it in the
+C:\WINDOWS\SHORTCUTS folder.  This cd hack should make this short-cut
+trick work in more situations (note that it is also possible to select
+multiple files to Send To Eden).  Note that the include() Eden
+function does not itself do a cd() - if you are using include(), you
+may do a cd() in the script yourself.
+
+Rewritten the File -> Open / Execute cd trick introduced in 1.15 from Tcl
+into Eden, meaning the cwd() function will be correctly re-evaluated when
+including files via this interface-driven route.
+
+Removed traces of 'tkusage', which apparently was an external application
+intended to keep track of the use of tkeden.
+
+Now storing the last twenty items of tkeden previous/next history.
+
+Deleted some stuff from edenio.tcl that was no longer needed (some comments
+and the old file browser things).
+
+Set the colours for the radio button bar to something other than grey to
+distinguish it from the menu bar on Windows.
+
+Removed code from edenio.tcl which fudges the text search to work with
+"buggy Tk" (version 4.0b3? - very old now).
+
+Added key shortcuts Alt-s and <Return> to View Options dialog.
+
+Find dialog: added case sensitivity option, "find in...", key short-cuts.
+Improved display of found text: previously it used the selection (sel) to
+highlight the text, which was not visible unless the window has focus on
+windows.  It is worth noting that the Find dialog can take regular
+expressions (eg "ash.ey", '.' meaning any character or "^start", '^'
+meaning start of line etc etc) as the search string.
+
+Added Help -> Scout, DoNaLD and Sasami quick references, but they aren't
+really finished yet.
+
+
+************************************************************************
+1.16   [Ashley] Mon Jun 25 2001 10pm
+************************************************************************
+
+Eden include() can now take multiple filenames:
+eg 'include("one.e", "two.e");'.  This should assist us with replacing
+our many 'run' UNIX shell scripts (of the form 'tkeden stuff.e blurb.s')
+with 'run.e' Eden scripts (of the form 'include("stuff.e", "blurb.s");').
+
+"multiplePossible" trivial Windows bug introduced in 1.15 fixed.
+
+File menu now has File -> Open and File -> Execute, as the meaning of
+Include was a little unclear (although it is technically correct, referring
+to the Eden function).
+
+Changed file types used: now using .eden, .donald, .scout, .sasami and
+.script.  The single character file-types were inadequate in many ways (we
+now have >1 notation as a candidate for .s, .s is also used for assembler
+files etc).  '.script' is intended to be used for the circumstance where a
+text file contains a script which uses mixed notations: Eden and Donald,
+for instance.  Hopefully this won't cause problems with Windows 8.3
+filename limitations.
+
+Adjusted keys.txt slightly - moved previous / next up as they are quite a
+common need.
+
+Eden's IPC functions (send_msg...) are now an optional compile (enable with
+./configure --enable-ipc) as I can't get them to compile on Linux.
+
+Rewrote Eden gets() function to actually use fgets() as use of gets()
+results in the compiler warning "the `gets' function is dangerous and
+should not be used."
+
+Reworked the curses stuff a bit to make it compile on Solaris and Linux
+more easily.
+
+Rethought the declaration of the 'rand' function to make it compile on
+Solaris and Linux more easily.  Also 'srand'.
+
+Sasami had some source files where the end of the file was missing a
+newline - the compiler on Linux warns about this, so corrected.
+
+(Probably) fixed a bug where Tcl would give 'invalid command name
+"tcl_wordBreakAfter"' when clicking in the input window after an error.
+This was introduced in the previous version when the Windows distribution
+was optimised to fit onto a floppy disk, missing out the file
+tcl8.0/word.tcl.
+
+Previously, the Scout 'integer' type was actually stored internally as a
+double and passed to Eden as a floating point number.  This caused problems
+in the jugs model as the value was then passed to an Eden function which
+expected an integer type.  Scout now holds 'integer' values as integer, and
+attempting to define a non-integer Scout value will result in "failed
+assertion" error at runtime.
+
+Previously redefining the type of a variable in Scout would cause a
+segmentation fault and a crash.  It seems that 'extern char *scoutErrorStr'
+and 'extern char scoutErrorStr[]' are not equivalent and this is where the
+problem stems from (the area of memory designated for the error message was
+in read-only memory).  So now Scout gives a nicer error message and doesn't
+crash.
+
+
+************************************************************************
+1.15   [Ashley] Mon Jun 25 2001
+************************************************************************
+
+Ancient history added to this file.
+
+Improved window creation on Windows: hopefully they should mostly be
+created on top now.
+
+Fixed bug in View Eden Definitions that caused some agents not to
+be displayed (bug due to me forgetting that malloc doesn't zero memory).
+
+Now specifying font for input window as courier - so we get fixed width
+characters on Windows.
+
+Tcl_Init was falling over with "couldn't stat "": no such file or
+directory" - fixed by inserting a call to Tcl_FindExecutable in main.c
+
+Changed many #include <...> to #include "..." to denote that they are
+not system header files.  Removed -I., -I.. and -I../Eden from CC Make
+rule, so the location of all header files should now be explicitly
+stated.
+
+Ported the new Sasami implementation (using Togl) back onto Windows.
+Changed right mouse button being used to button 3 so it works on Windows
+(this will cause the button used to be changed on UNIX).
+
+<Shift-Control-Tab> now deiconifies and raises windows that were
+iconified (eg minimised on the Windows taskbar)
+
+Changed method of specifying ~/.tkeden-history, meaning this should now
+work on Windows (but assuming the $HOME variable is set...).
+
+Auto-detecting where the Eden library files and Tcl init files (ie the
+setting of the TCL_LIBRARY environment variable) are from the current
+working directory on Windows, meaning we can do away with needing the
+run.bat hack to start tkeden (which previously required some manual
+user configuration).  Things even seem to work when we install into a
+directory with spaces in the path (eg "My Documents", "Program Files"
+etc), although I'd guess that not all models will handle this
+situation well.
+
+Updated the make windist implementation.  DOS line feed versions of
+the text files are now created using a unix2dos.sh script I created,
+so that Windows users attempting to read the documentation with
+Notepad are not stuck.
+
+Previously we needed the binary cygpath to be installed along with
+tkeden, as we need the functionality to convert from UNIX style paths
+to Windows style paths in edenio.tcl.  Now a new Tcl command
+cygwin_conv_to_full_win32_path is implemented which calls the CYGWIN
+DLL to give this functionality instead, so we no longer need the
+cygpath binary.
+
+Updated credits.txt to show libraries used.
+
+Rewritten some font and display handling functions (StringWidth, FontWidth,
+FontHeight, DisplayDepth) that were previously in C in Eden, using Tcl
+functions.  Removed EX/disp.c and EX/disp.h as the functions are no longer
+needed.  Fonts should now work on Windows as they do on UNIX (the jugs demo
+seems to work correctly, for example).  The default Scout font is now
+specified in a platform- independent manner, and seems to be a good size on
+Windows at least.  Note that now that the font handling is mainly Eden
+code, some dynamic configuration can be achieved - eg the value of DFfont
+can be changed (eg 'DFfont = "{courier 18}";') and the screen will update
+automatically etc.
+
+As the DOS tkeden stdout/stderr window now disappears as soon as
+tkeden exits, which gives the user very little time to view any error
+messages, tkeden now includes a signal handler which asks for the
+return key to be pressed in the window before the signal takes effect.
+This won't work in all potential cases, but it should do some.
+
+Reworked the menu bar in order to get the key shortcuts working
+correctly on Windows.  Unfortunately the changes required mean it is
+no longer possible to show the Accept and Interrupt menu entries
+differently from the others.  To solve this, Accept and Interrupt are
+now buttons in the radio buttons frame.
+
+Reworked the file save / open dialogs, using functionality that Tk
+provides.  The result will look the same on Windows, but a better dialog
+will be provided on UNIX.  Removed win32ex.c, win32ex.h as no longer
+needed.  It is now possible to File -> Include multiple files
+simultaneously (but on Windows only - this has only recently been
+implemented in Tk 8.4a2 on UNIX).  Use Control or Shift to select multiple
+files on Windows.
+
+Previously, File -> Include always inserted the text of the given file
+into the input window, and then into the history window when the
+accept button was pressed.  This fills up the history rather quickly.
+Now we have File -> Open, which gives this behaviour, and File ->
+Include, which does an Eden include(...) to read the contents of the
+file into the tool without filling the history too much.
+
+Changed default value of undef_reference_notice to 0 as we have too
+many existing models which reference undefined values as they load.
+If you are debugging a model and suspect that problems may be being
+caused by undefined values, try setting undef_reference_notice=1;
+
+Checked: I've heard reports previously that running models with
+intensive continuous computation may cause the tkeden interface to
+have problems (eg allegedly it was difficult to do File -> Quit whilst
+the VCCS was running).  I've checked this problem again now and it
+seems to have been fixed.
+
+Now cd'ing into the directory containing the file when doing File -> Open
+or File -> Include, which helps Eden include(...)'s in the model to work.
+Added code to main.c which makes the library location path an absolute path
+if it was specified as relative (by prepending the current working
+directory) to make the Help items work in this circumstance.
+
+Decided on size of 10 points for the edencode default font, which seems to
+give our customary size on UNIX (although it may be a little large on
+Windows).
+
+
+************************************************************************
+1.14   [Ashley] Thu Jun 14 2001
+************************************************************************
+
+Added Help -> CHANGELOG
+
+Merged Ben's Windows Changelog information into this file.
+
+Added Help -> Credits
+
+Fixed bug in errorf that caused Tcl errors (eg from Tcl_EvalEC) to come up
+with no information.
+
+Fixed sasami_viewport_bpp (I don't see how it could have worked before).
+
+Debugging facility getting still more functionality.  Call the Eden
+function debug() with a sum from these values to set what you want to see:
+  1:  various
+  2:  RunSet debugging
+  4:  Eden parser debugging (=yydebug)
+  8:  Sasami
+  16: Donald
+  32: Scout parser debugging (=st_debug)
+
+Improved the input window text insert cursor: it is now coloured, bigger
+and the flashing is hopefully a bit better (it spends little time being
+off, meaning you shouldn't lose sight of it).
+
+Added Help -> Eden Quick Reference, with formatted (blue) "optional" syntax
+text.
+
+Added ellipsis (...) where appropriate on menu entries to show that they
+lead to dialogue boxes...
+
+Added a -e argument, which enables the passing of some code to execute from
+the command line.  Any occurrances of \n are translated to newline
+characters (as the shell passes them literally) before execution of the
+string, to enable notations to be switched etc.  Examples of use:
+  tkeden one.e -e "writeln(1);" two.e
+  tkeden -e "%sasami\nopen_display"
+Note this might cause problems if you actually want to use a \n as you
+normally would (eg in an Eden writeln).
+
+Fixed some bugs in command line handling (I think -n, -i would not have
+worked on ttyeden in combination with files since I changed option handling
+to use getopt...).
+
+Figured out how to work around a bug which causes Sasami to use false
+colours on a Solaris machine with a cheap graphics card.  There is a bug
+somewhere (Sasami, Togl, Tk, X, OpenGL?) which causes Eden to use the wrong
+visual and colormap when running using Solaris 8 X and OpenGL on a machine
+with an 8-bit (old, low end) graphics card.  The easiest way to solve this
+problem currently seems to be to link Eden using Mesa (which is most simply
+described as an open-source OpenGL)... so I've added the necessary tests
+and options to configure to allow Mesa to be used instead of the Solaris
+OpenGL.  Sasami seems to work now even on an XDM terminal (albeit extremely
+slowwwly).
+
+
+************************************************************************
+1.13   [Ashley] Mon Jun 4 2001
+************************************************************************
+
+Attempting to add a 'procmacro' feature, similar to 'proc' but with a
+screen update and user input phase (ie tcl "update") - basically, a call to
+eager() between each statement as they are executed.  Eden procs appear to
+have two optimisations compared to entering statements line by line in the
+input window: screen update is delayed during RunSet evaluation, and the
+formula queue is not updated unless it is necessary (eg writeln on a
+changed variable).  This optimisation is useful and necessary as we quite
+often want state change to be indivisible.  'procmacro' was named thus due
+to the existing definition of a procedure named 'macro', which does string
+substitution and is used by Donald and some of the older models I should
+think.
+
+Defined YYERROR_VERBOSE to get more information during parse errors.
+
+Added errorf function which operates like printf.  This has allowed me
+to improve many of the error messages, giving extra detail of the problem
+(typically, I'm printing out the value that causes a problem and what was
+expected).
+
+Added information to the UNDEF (@) Datum which allows me to give an error
+message stating /which/ func/proc/procmacro could not be found in that
+event.
+
+Made Eden use bison.simple, meaning we should get more helpful parse
+error messages and possibly fairer input input / calculation balance.
+
+Added to debug() functionality - it now controls yydebug as well.
+
+Now giving decent location information on errors, in the form:
+error blah while blah near line x, char x:
+original line
+    ^ (char indicator)
+
+Added %expect definitions to parsers to prevent shift/reduce conflict
+errors on parsing expect when the number of conflicts changes.
+
+Added an Update button to the View Eden Definitions window which rebuilds
+using the options that the user chose last time (avoiding having to
+select them again using the View Options window).
+
+Fixed a bug which shows when a triggered action combined with an internal
+formula redefinition use the same triggers, eg proc xx : b { a is b+1; }.
+In this example, b was previously given the trigger [xx] when it should
+really be given [xx, a].  The lack of triggering means that the definitions
+involved suffered from lack of reevaluation and their value could get out
+of date.  Credit is due to Carlos Fischer who created clear test cases that
+showed this problem.
+
+Fixed a bug which occurred when the frame overflowed.  For example proc p {
+p(); }; p(); would give an error with "called by action ^A^CX" or even seg
+fault.  Now not attempting to print out nonsense frame information.
+Improved information (giving type of item called) given in this error
+message as well.
+
+Internal documentation improved a lot whereever I can.
+
+C-lib real-valued functions (eg sin, cos, pow...) used to give strange
+results when called with non-real parameters.  All of these functions seem
+to require real-valued parameters, so Eden now gives an informative error
+message when the wrong type is encountered.  Put more information into the
+int-valued C-lib error message as well.
+
+Fixed a bug involving use of query which would in some circumstances cause
+a seg fault.  Eg proc p { para q; ?q; }; p(42);.
+
+Changed query operator.  When it encountered values, previously it would
+simply display them:
+  4:> a=42;
+  5:> ?a;
+  42
+  a ~> [];
+Now the query operator prints "a=42" for consistency with its other
+outputs.  It also now prints out the identity of the agent who changed the
+symbol last.
+
+Improving debug() output a lot.  Categorising each output:
+  CALSTK call stack (changes call stack)
+  SYMTBL symbol table modification
+  DEFNET definition network (changes definition network structure in SYMTBL)
+  VMREAD reads data from prog array
+  VMWRIT writes data to prog array
+  VMEXEC virtual machine execute change progp
+  DATSTK data stack operation
+  MCSTAT use of other machine state
+  HEAPAL involves some heap allocation
+  VMOPER virtual machine op (in inst.h + probably invoked via func ptr deref)
+  FQUEUE formula queue
+  AQUEUE action queue
+  PARSER parser
+use | (bitwise OR) to form combinations, in the order that it occurs
+procedurally.
+
+Added a disassembler function disAss and using this in execute and other
+places to display the symbolic name of the opcode about to be executed etc.
+
+Rewrote push and pop as functions for DEBUG, which will slow performance in
+DEBUG mode but lets me print out valuable stack debugging information.
+
+Added a notice if you attempt to get the value of a variable which is
+actually undefined (this should be useful as people frequently mis-type
+variable names, I'm told!).  You can turn this on and off with using the
+variable undef_reference_notice - required as this isn't an error and can
+be intended behaviour in some models.  The default is for these warnings to
+be on - might need to reconsider this later.
+
+Added a Next item to the Edit menu.  Now have Previous / Next.  The input
+window now stores ten previous items entered and you can cycle through
+them with Edit -> Previous and Next.  As well as the Alt-E, [r|n] shortcuts
+for these (can't use Alt-E, p as this might be used in the future for
+paste), I've implemented Control-Alt-[up|down]: use the cursor keys.  Had
+to use the two modifiers together as CDE uses Alt-[up|down] and Tcl seems
+to give a simple up/down through the text with Control-[up|down].  Also
+added Control-Alt-0 key shortcut for clear for completeness.  The key
+shortcuts are marked in the Edit menu.  Also added Meta- shortcuts for
+those with meta keys.
+
+Changed Accept into a raised button, to show it is different to File etc
+which are menus.
+
+Giving current value in a comment for formula on ? query to save people
+having to writeln formulae to get values as well as ? query to find the
+definition.
+
+Previously tkeden beeped every time an error occurred.  If you were unlucky
+and got a series of errors or even a loop, you had an embarrassing stream
+of beeps.  Now tkeden only beeps if it hasn't beeped in the last three
+seconds.
+
+Scout screen window does not now appear when tkeden is initially started
+(it always used to previously, usually causing the input window to be
+obscured).  The screen window is created on the first occurrance of
+'%scout', when we can assume that the window is going to be used.
+
+Made the default input window a bit bigger.
+
+Made tabs in the input window the width of two characters to try and help
+people format their code there more easily.
+
+Control-U in the input window now deletes any text to the left of the
+cursor on the current line (as per many UNIX shells etc) - an easy way to
+quickly undo something you just typed which was wrong.
+
+Added a few more items to the Edit menu: Select all, Select non, Copy, Cut,
+Paste.
+
+The title of all windows created by tkeden now include the tkeden version
+number, and for dtkeden, whether dtkeden is running in server or client
+mode.  This should help to identify whether the history window that has
+just popped up in dtkeden is from the server or the client.
+
+Now when you attempt to close the History window, Eden definitions etc
+using the window manager (clicking on the window's close box), it works.
+(Hopefully including windows created by scout here).
+
+Added help to the Eden Redefinitions window which reminds us that
+control-click can be used to select individual items.
+
+Now, if Shift-Control-Tab is pressed in any tkeden (input window, View
+Definitions, scout windows...), all the tkeden windows are brought to the
+top, with the Input window top-most.  This should help with window
+management when there are many windows on the screen.
+
+Additions to Eden built-ins specifying behaviour now changed to
+eden_error_index_range and eden_notice_undef_reference - more sensible and
+hopefully avoids most clashes with user code.
+
+Made it possible to do related by statements with a LHS that is evaluated
+at run-time, eg r="c";`r`~>[q];
+
+Fixed a bug which prevented the use of related by statements within procs
+eg proc q : w { a ~> [q]; } (before, note that ?q would have shown the lack
+of identification of the w trigger).
+
+Removed some code added by Patrick to yacc.y 1.8 (Rel1.0) which looks like
+it was attempting to fix the problem of referential dependency.  It
+actually makes this problem (if indeed it was attempting to fix it) worse.
+
+Moved Edit menu next to File menu (so order is now File, Edit, View...)
+
+Added source code Makefile dependency checking, using the preprocessor
+options to get this information.  Enable with --enable-depend to
+./configure: see INSTALL.TXT.
+
+Made dtkeden View -> Client connections window consistent with the other
+View windows in the interface.  Also, the dtkeden client Send button is now
+raised, whereas on the server it is normal, in an attempt to show whether
+the button is a menu heading or an action button.
+
+Improved usage information (-u) for dtkeden.
+
+Made Tcl aware if Sasami is available or not, and hide the relevant options
+if it is not.
+
+Added radio buttons above the tkeden prompt which emphasise the currently
+selected notation (ie which interpreter we are talking to) and which can be
+used to set the currently selected notation without needing to type %donald
+etc at the top of the input text.
+
+Gave the text input window a white background to make the interface look
+less mono coloured and to make text there more readable, both on the screen
+and in printed screen shots.
+
+Added a Help -> About key shortcuts dialogue giving lots of information
+about possible key presses in the input window and elsewhere.
+
+Ported Sasami to UNIX.  Replaced Ben's Windows-specific Sasami
+window-creation code - using an implementation of an OpenGL Tk widget named
+Togl (http://togl.sourceforge.net/ - had to get the most recent development
+version from SourceForge CVS) instead.  Sasami also uses GLpng for loading
+PNG images as texture maps
+(http://www.wyatt100.freeserve.co.uk/download.htm) - luckily this compiles
+OK on Solaris.  Now the Sasami window creation code is mainly Tcl/Tk, in
+edenio.tcl.  The mouse movement code is also now in Tcl.  Sasami errors now
+use the Eden (not Windows) facilities.  These changes should allow
+portability of Sasami across UNIX / PC / Mac (in the future) and should
+allow extensions: 1) feedback of which polygons the mouse is currently
+positioned over to Eden, 2) wrapping of (multiple?) Sasami windows in
+Scout.  Sasami is now always included in tkeden, unless you specify not
+using a configure option.  The Sasami window now seems to be resizable (I
+assume Tcl is passing events through to the togl widget), so if a model is
+running slowly on your particular machine, you can make the window
+smaller.  Now when Eden changes some Sasami state, the renderer is not
+immediately invoked - rendering is delayed until the next Tcl update (until
+a change of RunSet) and so rendering a change to the Rubiks cube etc is now
+much, much faster.  I've changed the default camera position too, to be
+further away from the origin as most models seem to be quite large.
+
+LICENSE files added to Docs for Togl, GLpng.
+
+Major re-implementation of the Makefiles as the make 'include' directive
+seems to be fairly globally available, so all the Makefiles now include
+../generic.mk.
+
+Control-C now just causes the error message to occur on stderr, as the
+reentrant call into Tcl when interrupted in Sasami causes Tcl to crash.
+Also now using a timer (like the beep timer) for control-c: previously,
+control-c could only be pressed once during a session - the second
+interrupt killed tkeden.  Now tkeden can be killed by interrupting twice
+within three seconds - if the interval is longer than three seconds, the
+warning message appears again.
+
+main.c: checkRunSet unified multiple TTYEDEN, DISTRIB etc versions into one
+piece of code.  Run time behaviour of the versions may change slightly as a
+result - hopefully for the better.  Pressing the interrupt button now gives
+a visual indication of the press.  The VMEXEC machine now stops executing
+if the interrupt button was pressed (so it should be easier to stop tkeden
+if it is stuck in a tight loop).
+
+Wrote a Tcl_EvalEC function to evaluate Tcl code and do an error check on
+the result.  Actually uses Tcl_EvalEx which should speed things up
+slightly.
+
+Bug fixed: definition of a TEXTBOX in Scout would show up as UNKNOWN in the
+View Scout window and in a Scout query ? operation.
+
+Added 'bitand' and 'bitor' infix operators to Eden: same syntax as the
+eager 'and' and 'or' operators, but they give the bitwise result.
+
+Added sensitive: ENTER and sensitive: LEAVE functionality for Chris.  OFF,
+ON, MOTION, ENTER and LEAVE are now pre-defined Scout symbols: combine them
+by adding, eg: 'sensitive: ON + ENTER'.
+
+
+************************************************************************
+1.12   [Ashley]
+************************************************************************
+
+Fixed a bug with back-ticks ``.  A change that Patrick introduced made
+back-ticks evaluate at first definition, even if autocalc was off, causing
+possible undefined function errors etc (unfortunate as the View Eden
+Definitions etc show definitions first, then functions).  Also the code
+had a confusing and unnecessary * pointer dereference - fixed.
+
+Got Tcl to sort the list given in File -> Include (finally).
+
+Added index_range_error Eden integer value.  It works in a similar way
+to `autocalc'.  If the value is 1 (as it is by default), then Eden's
+behaviour is as previously: it gives an error "index error: out of range"
+when asked to evaluate a reference into a string or list which is out of
+range.  Setting index_range_error to 0 causes Eden to simply return @
+and give no error instead.
+
+Added an Edit menu with Previous and Clear options.
+
+Added key short cuts for windows opened with OpenDisplay (so you can now
+remove the annoying default scout window using the keyboard only if you
+don't want it).
+
+Now keeping three backups of ~/.tkeden-history (as people don't seem to
+look at this file after a crash until they've restarted tkeden a few
+times).
+
+
+************************************************************************
+1.11   [Ashley]
+************************************************************************
+
+Added GPL license and changed existing CHANGES.TXT to add this
+
+Removed 'doubling stack allocation' experiment which never should have
+really found it's way into a release 'cos it didn't work.
+
+Added changes required to tkeden/Makefile.in and configure.in in order to
+be able to build on my Sparc 2 at home (Solaris 7 + some GNU things).
+
+Improved build documentation - removed very outdated INSTALL document,
+replaced with a document describing requirements and build process.
+
+
+************************************************************************
+1.10   [Ashley] Wed Nov 15 16:40:41 GMT 2000
+************************************************************************
+
+About to create a tarball for import into SourceForge.  Will leave the
+RCS information around in the hope that they can import it into CVS,
+but remove all generated files and also the stuff in the Windows dir
+that isn't part of Eden source.  Also it looks like it is difficult to
+rename directories etc in CVS so lib-tkeden1.9 will become lib-tkeden.
+
+Reworked this CHANGE.LOG into reverse chronological order.
+
+
+************************************************************************
+1.9   [Ashley] Wednesday October 11 17:55:40 BST 2000
+************************************************************************
+
+Minor changes to documentation in Windows/run.bat and TODO
+
+Had been experimenting to try and get something like
+  cat - | arca.trans | tkeden
+to work (ie tkeden reads commands from stdin whilst running all other
+stuff simultaneously).  Ran into problems with buffering in pipes, so
+the kbhit() function I added is now ifdef'd out.
+
+
+************************************************************************
+1.8   [Ashley] Sunday September  3 21:49:19 BST 2000
+************************************************************************
+
+Added comment to scout.init.e about using Tcl to do trivial ImageScale-ing.
+
+Copied $PUBLIC/lib/tkeden/nArca.init.e into the lib directory as arca.lib,
+and added revision control header as arca seems to be considered more
+"mainstream" than I thought.
+
+Sorted out Docs/TODO a lot.
+
+windist target strips the executable now - this makes it all fit onto one
+floppy :)
+
+
+************************************************************************
+1.7   [Ashley] Thursday August 31 18:57:44 BST 2000
+************************************************************************
+
+Found a copy of config.guess and config.sub from
+/dcs/rap/mp3/cdparanoia/cdparanoia-III-alpha9.7/
+as the GNU CVS site is down.  This seems to be required now that locally,
+autoconf seems to have been "upgraded" to 2.14a (and the older version has
+been removed).
+
+Directory structure cleaned up a little: Docs and Windows subdirectories
+introduced, README.TXT in the main directory.
+
+(Rel1.7 released, but again in a minute)
+
+config.sub wasn't recent enough to work on Cygwin.  Found more recent
+copies in /package/gap4r2/cnf.
+
+Copied some of Ben C's support files into the Windows subdirectory...
+Glpng etc.
+
+Fixing bugs to do with configur-ating Sasami
+
+Merging in Ben C's changes to the Tcl code
+
+Put some of the info from Ben C's Readme into the Windows directory.
+
+(Rel1.7 released, but again in a minute)
+
+Added a windist target to the main Makefile and wrote a run.bat script
+that detects whether tkeden is in the current directory or not.
+
+Added more directories to the setrcsstate target in main Makefile.in
+
+Removed guessLibLocation as it just doesn't work in too many circumstances.
+We'll have to rely on wrapper scripts etc using the -l argument.
+
+Merged in changes from BenC's Sasami version 0.6 (previously I had his
+version 0.3, and I'd simply left out all of the actual Sasami notation,
+just keeping the changes necessary to get tkeden to run on Windows.  It
+now looks like Sasami will be considered a "standard" part of tkeden
+(a nicer solution would be a plug-in style thing, but we don't have the
+time to do this), and so I've made it optionally compiled when WANT_SASAMI
+is defined.  Sasami only works on Windoz at present).  Windows version 0.4
+-> 0.6 changes:
+
+--Win32-V0.4----------------------------------------------------------------
+
+ Added support for materials (which gives full control over lighting 
+parameters and texturing) through the "material" object type.
+ Linked in the glPNG library for loading PNG files as textures. This means
+that Sasami now needs the glPNG libraries compiled and installed to compile
+correctly. glPNG can be found in the Sasami distribution (hopefully) or at
+http://www.wyatt100.freeserve.co.uk/download.htm .
+ Commented out the glBindTexture/glGenTextures calls in glpng.c to avoid
+needing to link it with the non-existant OpenGL 1.1 library for CygWin. 
+ (note : this hack is no longer needed - see below)
+ Added texture-mapping support, with auto-generation of texture co-ordinates
+if they aren't provided, and support for using texture binding to prevent
+texture-thrashing.
+ Built the "Rubik's cube" example script.
+ Increased the default ambient lighting a bit so objects no longer appear
+100% black when not facing the light source.
+ Built a new libopengl32.a based on MSVCs one, which includes the 1.1
+functions - most notably glGenTextures and glBindTexture, which are
+used by the texture-mapping code. This fixes the problems with OpenGL
+implementations which don't export these via wglGetProcAddress (such
+as the MS and SGI software implementations), and means that a custom build
+of glPNG is no longer required.
+ Packaged up the Sasami examples in a slightly more convienient directory.
+ First "public" release version 
+
+--Win32-V0.5----------------------------------------------------------------
+
+ Rewrote the Sasami parser to cope with variable number of parameters in
+notations, and altered various functions to take advantage of this - mainly
+by allowing multiple vertices/polys/etc to be specified in one call.
+ Added commas to the list of things the parser considers seperators,
+allowing for scripts to use (easier to read in some circumstances) comma
+seperated notation.
+ Fixed a stupid bug where the whole parsed string was converted to lowercase,
+including variable names - effectively preventing Sasami from reading Eden
+variables whose names contained uppercase characters!
+ Fixed a *very* nasty bug where texture loading and rendering could take
+place before OpenGL was initialised, resulting in an instant crash...!
+ Implemented a parser for Lightwave format .OBJ and .MTL files, converting
+them to Sasami code on-the-fly (and hence into Sasami objects).
+ Reenginnered billiards model to give a 3D display.
+
+--Win32-V0.6----------------------------------------------------------------
+
+ Added better Windows message handling - Sasami now responds correctly to
+window actions when Eden is blocking the main thread (eg : 
+"while (1) eager();").
+ Built animation sample (animate.s) to demonstation time-delta-based
+animation loops.
+ Fixed a bug that caused textures to be lost when the viewport was resized.
+ Added support for user-definable lighting.
+ Fixed user-definable lighting to work properly, and added sa_r_maxlights
+to reflect the number of OpenGL-accelerated lights available.
+ Finished up support for alpha-transparency, and wrote glass.s sample to
+demonstrate it.
+ Altered default lighting so that models are reasonably evenly lit.
+ Altered "load_obj" command so that by default it only loads the object
+and material definations as Eden declarations, and added "load_full_obj"
+command which loads everything (the previous behaviour).
+ Fixed a stupid glFrustrum typo that was causing the far clip plane to
+be ridiculously close, and objects to appear to be microscopic in size
+(perspective-wise)!
+ Fixed a bug in the OBJ loader that prevented objects with co-ordinates
+specified with exponents from being loaded correctly.
+ Edited animate.s sample to use todo() instead of eager() so that it
+doesn't block Eden from executing user input.
+ Added visible flag to objects.
+
+
+************************************************************************
+1.6   [Ashley] Monday April  3 20:18:06 BST 2000
+Rel1.6: onto new Dell PC, Windoz again, with merged in changes
+(and again a few mins later)
+And into $PUBLIC/bin
+************************************************************************
+
+Fixed silly bug in Scout/Makefile.in that caused Scout to fail to recover
+from parse errors.  (bug15)
+
+Increased size of a buffer that was being overwritten by Patrick's code
+(bug16) in the SIT! model.
+
+Fixes made on the new PC for Windoz:
+o -X11 doesn't work on Windoz: need -lGDI32 -lUSER32 -lCOMDLG32 -lOPENGL32
+  -lKERNEL32 instead
+o Eden/main.c libgen.h not on Windoz.  dirname does not exist.  Commented
+  out - will have to manually provide the location with -l.
+o Misc/custom.h needs the __WIN32__ declaration
+o EX/disp.c different fontHeight etc required on Windoz - replaced Ben's
+  nominal values
+
+libLocation error message added if not set.
+
+winportextras files (.dlls, run.bat etc) added to the distribution.
+
+
+************************************************************************
+1.5   [Ashley] Thursday March 23 16:18:11 GMT 2000
+Rel1.5: onto new Dell PC, Windoz
+************************************************************************
+
+tkeden prompt changed to show the current VA.  Installed at DCS.
+Version number not updated.
+
+bug10 (railway accident server seg fault) fixed in my copy
+scout.init.e updated: Tcl bound events now all redefine symbols with a "~"
+prepended in an attempt to avoid problems with the current VA setting.
+Need to update DCS copy
+
+bug11 (timetable @ screen seg fault) fixed in my copy
+
+Added a new function, symboltext() for Chris.  Need to document.
+
+Attempted to make stack resize dynamically.
+
+Fixed readline prompt problem by making readline print the prompt
+(previously it was done by Eden and would fail to be reprinted for example
+on a Ctrl-U).
+
+
+************************************************************************
+1.4   [Ashley] Fri Jan 14 15:27:40 GMT 2000
+Rel1.4: into $PUBLIC
+************************************************************************
+
+o A copyright notice in the about dialogue
+o Get rid of HOSTNAME env variable
+o Change use of CHAR to something else to prevent clashes with Windoz
+  header files (says Ben)
+o `@` now gives @, not an "expecting string" error.
+o Get ttyeden to use GNU readline to enable decent editing.
+o Merged in Ben's changes, as follows:
+
+ You need to set up the PUBLIC variable with something like "export
+ PUBLIC=/programs/eden". 
+
+ Also, set TCL_LIBRARY=/cygwin/cygwin-b20/share/tcl8.0.
+
+--Win32-V0.1----------------------------------------------------------------
+
+Modified :
+
+configure
+makefile.in
+eden\builtin.c
+eden\eden.h
+ex\disp.c
+ex\disp.h
+misc\customlib.h
+donald\tree.h
+
+ Initial Win32 port.
+ Not much works!
+
+--Win32-V0.2-----------------------------------------------------------------
+
+Modified :
+
+tkeden\configure
+tkeden\ex\disp.c
+tkeden\ex\ex.c
+tkeden\version.h
+lib\tkeden\edenio.tcl
+tkeden\ex\win32ex.c
+tkeden\ex\win32ex.h
+tkeden\ex\makefile.in
+
+ Implemented "hacked" versions of FontWidth & FontHeight.
+ Altered configure script to link in Windows GDI functions.
+ Implemented native DisplayDepth() function.
+ Implemented slightly dodgy version of StringWidth.
+ RoomViewer now works (FontWidth/FontHeight problems), albeit with misaligned
+ text.
+ Added Win32 version numbering to version.h.
+ Added Win32 version number message to Help->About window.
+ Removed the focus-follows-mouse flag when running on Windows, as this is not
+ normal Windows behaviour and will only confuse/annoy users!
+ Added win32ex files to EX to hold Windows GUI functions.
+ Rewrote the File->Include code to use a standard Windows dialog.
+ Rewrote the File->Save <xx> code to use a standard Windows dialog.
+ 
+--Win32-V0.3-----------------------------------------------------------------
+
+Modified :
+
+tkeden\version.h
+tkeden\ex\parser.c
+tkeden\eden\notation.h
+tkeden\ex\lex.c
+tkeden\ex\script.c
+tkeden\sasami\*
+tkeden\makefile.in
+tkeden\configure
+tkeden\* , pretty much! :-(
+
+ Added hooks to allow Sasami code to be entered and parsed.
+ Created modified lexer/parser based on Donald code.
+ Dumped Donald lexer/parser as it's way too complex.
+ Wrote parser for Sasami code.
+ Added Sasami OpenGL rendering code.
+ Added Sasami functions to builtin.c for reading back changes to data.
+ Sasami vertex rendering now works.
+ Fixed up some structural bugs and implemented polygon rendering.
+ Added auto-normal generation so OpenGL lighting works.
+ Fixed crash-on-shutdown bug due to not destroying WGL context correctly.
+ Fixed support for comments in Sasami
+ Added object handling code, and modelview matrix logic for objects
+ Moved variables like background colour to be "true" Eden variables
+rather than function calls.
+ Fixed lazy-creation of certain objects causing crashes if the object was
+used before any parameters set.
+ Added "`" notation for passing code to Eden.
+ Added the ability to change viewport resolution from Eden, and to toggle
+the axes indicators.
+ Created a simple morphing object demo.
+
+
+************************************************************************
+1.3   [Ashley] Mon Nov  8 21:54:31 GMT 1999
+Rel1.3: to take home with me!
+************************************************************************
+
+o Investigated with tcl/tk 8.2.0 (was previously using tcl/tk 8.0).  Fixed
+  environment variable handling.  Now OK.
+o Makefile should mark lib files with version number
+o configure: don't stop compilation if we don't have tcl/tk
+o Error message "unexpected end-of-file in chararcter constant" !!
+
+
+************************************************************************
+1.2   [Ashley] Wed Nov  3 16:16:12 GMT 1999
+Rel1.2: bug fixes to 1.1.  Ooops - didn't mean to increment the version
+no.
+************************************************************************
+
+o Bug fix: myttyeden, s=0;<RET>s=1l;<RET><RET> - seg fault.  Not in ttyeden
+  Investigated, and found only in wierd set of circumstances - ignore.
+
+o Error message "type clash: expectingint" !!
+o Error message "no such variable ash ...called by"
+o Error message "func/proc needed ...while executing"
+
+o bug7 at ITS
+  Same as above - found it happened lots at ITS.  Worked around.
+
+
+************************************************************************
+1.1   [Ashley] Wed Nov  3 13:51:59 GMT 1999
+Rel1.1: installed at ITS under ~cssbz for CS233 experiments with Eddi
+************************************************************************
+
+o $PUBLIC.  Could eliminate by using dirname(argv[0]) or similar.  However,
+  Eden support code uses it.  Could rewrite Eden support code, but other
+  Eden code might assume it.  Perhaps could detect with this procedure,
+  then set the variable once the tkeden process has started.  However -
+  this looses us flexibility - cannot set PUBLIC to somewhere else
+  deliberately.  Perhaps could allow an override with a command line
+  option.  Would this solve more problems than it causes (esp wrt the
+  Windoz port?).  Perhaps change to EM_PUBLIC whilst about it.  Or set
+  EM_PUBLIC in a wrapper around tkeden etc... then users don't need to keep
+  modifying their setup. Or maybe EM_LIB would be more appropriate.
+  Wrapper script should set the variable if it is not already set to allow
+  overriding.  Or perhaps lib files should be in a subdirectory of dirname,
+  including the tkeden version number to allow installation of multiple
+  versions.
+
+o Provide a way to override the library files detection result
+
+o Rewrote emalloc etc as macros and other stuff to enable dmalloc to
+  give sensible reports
+
+o Fix the Scout memory leak that Simon found: bug5
+
+o Redid COPYING file.
+
+Couldn't reproduce:
+o Fix the Tcl bug that Simon found: OXO demo "Tcl errors occur when
+  you shut the model down with the clock (animation) still running."
+
+o Copy and paste problems on UNIX.  A Tcl problem.  Don't move the mouse
+  whilst you click the middle button.
+
+
+************************************************************************
+1.0   [Ashley] Fri Oct  8 20:13:02 1999 (about)
+Rel1.0: to Ben Carter for OpenGL expts
+************************************************************************
+
+o These changes made by Ashley Ward.
+
+o Throw away Imake stuff, start again with autoconf.
+o Merge in Patrick's dtkeden changes
+o Put unused code in Attic. Also their RCS files
+o Fix ttyeden on Linux (rethink linking to curses?)
+
+o Remove -R and -ldl from linking on Linux. Also need
+  -I/usr/include/ncurses.  Also need -lncurses, not -lcurses
+o Move Attic directories into one directory, possibly out of the source
+  distribution
+o Fix curses stuff - try with ncurses_g?
+o Check through error messages etc output from tkeden - fix for good
+  English :)
+o Check for PUBLIC being set - if unset, crashes with seg fault on ARML.
+o Check what happens when DISPLAY is not set or xhost problem - falls over
+  nicely?
+o "...near line <thing>" could do with some more description of the line.
+o Compile with optimisation (gcc -O2, cc -xO2 + change the number)
+o Move Imakefiles into Attic
+o Remove unnecessary gunk from start of Makefile.ins - install eg
+o Can ttyeden do donald and scout? If not, remove the code from the link...
+o Remove UNIX command dependencies: 'ls' in file handling
+o dtkeden has a new TEXTBOX functionality - document!
+o Need a dynamic buf in type.c, t_str to prevent overflow and Seg fault when
+  converting long lists to strings.
+
+o Do we have a Y2K problem, with the results from gettime(), time(),
+  ftime()?
+o Eden gettime() uses C-lib time() and C-lib localtime(), the year result
+  of which is years since 1900.  So applications, currently receiving the
+  number 99, will receive the number 100 next year.  So OK.
+o Eden time() is basically a call to C-lib time(), so OK.
+o Eden ftime() is basically a call to C-lib gettimeofday(), so OK.
+
+o A -v option to show the current version (of tk and tty eden)
+o Help -> About Tkeden to show version number. Perhaps also print it on
+  stdout when started up. (no!).  Perhaps also show $tcl_version.
+
+o Remove RCS Log header
+
+o Make sure all the code has a static RCS Id header so we can use strings
+  on the executable.
+
+o Move lib/bison into the source directory. Remove the sym links.
+
+o Fixed the Segmentation fault found when running the dtkeden railway demo
+
+o Tcl error messages seem to be swallowed and replaced with less helpful
+  ones.  See especially the definition of tcl() - whereever that is...
+
+o Rewrote curses linkage to remove SunOS dependencies
+
+o Added a new hook:
+    _tkeden_showxoutput = 1;
+  shows xoutput tcl output
+
+
+
+
+And now some ancient history...
+
+************************************************************************
+September 3 1999 [Patrick Sun?]
+************************************************************************
+
+o tkeden.S and tkeden.C merged into one dtkeden version with a command
+  argument -s(superagent)|-a(agent).
+
+o -h<hostname> command argument added
+
+
+************************************************************************
+December 15 1997 [?]
+************************************************************************
+
+o Unknown changes
+
+
+************************************************************************
+December 9 1997 [Patrick Sun]
+************************************************************************
+
+o tkeden.S and tkeden.C (server and client) variants created by Patrick
+  Sun, later to be called dtkeden, created from the tkeden source.
+
+o -c<channel #> command argument added.
+
+o This version must be run on gem (as gem is hard-coded as the host).
+
+
+************************************************************************
+September 26 1997 [Richard Cartwright?]
+************************************************************************
+
+o Two versions of tkeden compiled for DCS, possibly by Richard Cartwright,
+  it looks like one for 'sun5' (tkeden-sep2619972) and one other
+  (tkeden-sep261997).
+
+
+************************************************************************
+October 28 1996 [Simon Yung?]
+************************************************************************
+
+o A version of tkeden compiled for DCS (by Simon Yung?).
+
+
+************************************************************************
+June 20 1996 [Simon Yung?]
+************************************************************************
+
+o A version of ttyeden compiled for DCS (by Simon Yung?) on SunOS?
+
+
+************************************************************************
+February 27 1996 [Simon Yung?]
+************************************************************************
+
+o Last RCS check-in made by Simon Yung?
+
+
+************************************************************************
+July 7 1995 [Simon Yung?]
+************************************************************************
+
+o First RCS check-in made by Simon Yung?

@@ -1,0 +1,62 @@
+Some menus and buttons have key shortcuts.  These are shown with an
+underlined letter, and can be activated by pressing Alt and that letter.
+For example:
+
+  Accept the current input: Alt-a
+  View the Eden Definitions window: Alt-v Alt-e
+
+Valid throughout Eden:
+
+  Bring all Eden windows to the front: Shift-Control-Tab (in any window)
+
+Using the mouse in the input window:
+
+  Select text: drag
+  Select word: double-click
+  Select words: drag after a double-click
+  Select line: triple-click
+  Select lines: drag after a triple-click
+  Adjust ends of selection: Shift + drag button 1
+  Reposition cursor without affecting selection: Control + click
+  Insert text at mouse cursor: click button 2
+  Scroll view: drag button 2
+
+Using the keyboard in the input window:
+
+  Move backwards in input history: Meta-Up or Control-Alt-Up or Alt-p
+  Move forwards in input history: Meta-Down or Control-Alt-Down or Alt-n
+
+  Cursor left: Left or Control-b
+  Cursor right: Right or Control-f
+  Move cursor by words: as above, with Control or Meta
+  Move cursor to start of line: Home or Control-a
+  Move cursor to end of line: End or Control-e
+
+  Cursor up: Up or Control-p
+  Cursor down: Down or Control-n
+  Move cursor by paragraphs: as above, with Control
+  Move cursor up one screenful: Prior (Page up)
+  Move cursor down one screenful: Next (Page down) or Control-v
+  Move cursor to start of text: Control-Home or Meta-<
+  Move cursor to end of text: Control-End or Meta->
+
+  Select text: as above, with Shift
+  Select all text: Control-/
+  Select no text: Control-\\  
+
+  Copy selection to clipboard: Copy (F16) or Meta-w
+  Cut selection to clipboard: Cut (F20) or Control-w
+  Insert clipboard at cursor: Paste (F18) or Control-y
+
+  Delete to left of cursor: Backspace or Control-h
+  Delete to right of cursor: Delete or Control-d
+  Delete word to right of cursor: Meta-d
+  Delete word to left of cursor: Meta-Backspace or Meta-Delete
+  Delete to end of line: Control-k
+  Delete to beginning of line: Control-u
+  Delete selection: Control-x
+  Clear all text in input window: Meta-0 or Control-Alt-0
+
+  Open new line (insert newline): Control-o
+  Reverse order of two characters to right of cursor: Control-t
+  Indent: tab stops (use the Tab key) are set to two character widths

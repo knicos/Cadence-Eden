@@ -1,0 +1,155 @@
+------ DoNaLD (Definitive Notation for Line Drawing) QUICK REFERENCE ------
+
+Warning: this documentation isn't quite finished yet...
+
+
+CONTENTS OF THIS QUICK REFERENCE:
+
+1. Syntax
+2. Data types
+3. Functions
+4. References
+5. Pre-defined variables
+6. Attributes
+7. Viewports
+8. More information
+
+
+-- 1. SYNTAX -----------------------------------------------------------------
+
+No semi-colons: line feeds are terminators
+Line continuation: use \ at the end of a line to continue to the next
+
+# UNIX shell style one-line comments
+
+Variables must be declared before use (except when using the ! operator)
+Redeclaration of type is not possible
+
+Name space: append ! to an identifier to reference an Eden variable: eg
+  eq!(a, b)
+
+Escaping to Eden: ? is a one-line escape to Eden (remember to terminate
+  with a semi-colon)
+
+
+-- 2. DATA TYPES -------------------------------------------------------------
+
+int: 34
+real: 10.0
+char: "abc"
+boolean: true, false
+
+point: {50, 100}
+point: {modulo @ angle} ie distance and angle (radians) from the origin
+
+line: [{10, 10}, {80, 90}]
+arc: [point1, point2, angle] -- 'angle' (degrees) portion of a circle,
+                                end points are point1, point2: note
+                                NOT arc(p, p, a)
+
+circle: circle(centre, radius), circle({500, 500}, 400)
+ellipse: ellipse(centre, major, minor)
+rectangle: rectangle(point1, point2)
+label: label(string, point)
+
+image: I!ImageFile("gif", "hill.gif")
+openshape: openshape cross
+           within cross {
+            line l1, l2
+            l2 = [{300, 300}, {100, 100}]
+            l1 = [{300, 100}, {100, 300}]
+           }
+shape: shape S
+       S = trans(cross, 100, 200)
+graph: (see other documentation)
+
+
+-- 3. FUNCTIONS --------------------------------------------------------------
+
+Arithmetic: + - * div mod sqrt log exp trunc float rand
+Trigonometric: sin cos tan asin acos atan
+Relational: && || ! < <= == > >=
+
+Geometric:
+point midpoint(line)
+point intersect(line, line)
+line perpend(point, line)
+real dist(point, point)
+bool intersects(line, line)
+bool separates(line, point, point)
+bool includes(circle, point)
+bool incident(line, point)
+bool incident(circle, point)
+bool pt_betwn_pts(point, point, point)
+bool colinear(point, point, point)
+bool distlarger(point, point, value)
+bool distlarger(line, point, value)
+bool distsmaller(point, point, value)
+bool distsmaller(line, point, value)
+
+Shape transformations (note "entity" can be any Donald type):
+trans(entity, x, y)
+scale(entity, factor)
+scalexy(entity, xfactor, yfactor)
+rot(entity, point, angle)
+reflect(entity, line)
+
+String functions:
+// (string concatenation)
+itos(int)
+rtos(real, fprintf-format-string)
+
+Image functions:
+I!functionName denotes a function returning an image
+
+
+-- 4. REFERENCES -------------------------------------------------------------
+
+x: variable x in the immediate context
+
+~/x: variable x in the context one level up
+
+/x: variable x in the root (topmost) context
+
+x!: the Eden variable x
+
+.1, .2: first and second points of a line or first and second coordinates
+        of a point
+
+.x, .y: projection of a point onto the x- and y- axes
+
+
+-- 5. PRE-DEFINED VARIABLES --------------------------------------------------
+
+pi: ratio of circle circumference to diameter (note upper case PI in Eden)
+
+
+-- 6. ATTRIBUTES -------------------------------------------------------------
+
+To give an attribute to the DoNaLD variable Obj/line1, use the Eden escape:
+  ?A_Obj_line1 = "attribute1=value1,attribute2=value2...";
+
+color
+outlinecolor
+linewidth
+linestyle: dotted, dashed or solid
+arrow: first, last, both or none
+locus: true, false
+fill: solid or hollow
+font: a string: "{family size style}"...
+  family = times, courier or helvetica,
+  size = in points (1/72th inch)
+  style = normal, bold, roman, italic, underline, overstrike
+    (multiple styles are possible: "{times 12 {bold italic}}")
+
+
+-- 7. VIEWPORTS --------------------------------------------------------------
+
+viewport VIEW1
+
+The default viewport is DoNaLD.
+
+
+-- 8. MORE INFORMATION -------------------------------------------------------
+
+See http://go.warwick.ac.uk/EDEN/ for more detail.

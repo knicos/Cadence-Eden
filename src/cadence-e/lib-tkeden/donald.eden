@@ -1,0 +1,1611 @@
+/*
+ * $Id: donald.eden,v 1.3 2002/07/10 19:28:08 cssbz Exp $
+ */
+
+/* --- SPECIFICATION FOR OPERATORS AND INITIALIZE GRAPHICS --- */
+
+setbuf(stdout, 0);
+
+OFF	= 0;
+ON	= 1;
+NullStr = "";
+NullList = [];
+/* PI	= 3.141593; */
+
+/*
+TYPE	= 1;
+X	= 2;
+Y	= 3;
+P1	= 2;
+P2	= 3;
+P3	= 4;
+CENTRE	= 2;
+RADIUS	= 3;
+TEXT	= 2;
+*/
+
+INF	  = '!';	/* [ INF ]		*/
+/*
+INT	  = 'I';	/* [ INT, I ]		*/
+*/
+REAL	  = 'R';	/* [ REAL, ??? ]	*/
+CHAR	  = 'W';	/* [ CHAR, ??? ]	*/
+BOOLEAN	  = 'B';	/* [ BOOLEAN, B ]	*/
+CART	  = 'C';	/* [ CART, X, Y ]	*/
+POLAR	  = 'P';	/* [ POLAR, R, A ]	*/
+LINE	  = 'L';	/* [ LINE, P1, P2 ]	*/
+ARC       = 'U';	/* [ ARC, P1, P2, R ]	*/
+CIRCLE	  = 'E';	/* [ CIRCLE, P, R]	*/
+RECTANGLE = 'G';	/* [ RECTANGLE, P1, P2]	*/
+ELLIPSE	  = 'Q';	/* [ ELLIPSE, P, P, P ] */
+LABEL	  = 'T';	/* [ LABEL, W, P ]	*/
+SHAPE	  = 'S';	/* [ SHAPE, ??? ]	*/
+OPENSHAPE = 'O';	/* [ OPENSHAPE, ... ]	*/
+IMAGE	  = 'I';	/* [ IMAGE, W, P ]	*/
+/*
+MONITOR	  = 'M';	/* [ MONITOR, B, ...]	*/
+IMPOSE	  = 'I';	/* [ IMPOSE, I ]	*/
+*/
+
+if (tcl("set tk_version") < "8.3") {
+  dashedopt = "";
+  dottedopt = "";
+} else {
+  dashedopt = " -dash {_}";
+  dottedopt = " -dash {.}";
+}
+
+/* check for ill-defined value
+   argument: list
+   return: @ if the list is @
+	   1 if all terms are well-defined
+	   0 if partly undefined */
+func idv
+{
+	para	d;
+	auto	i;
+	
+	if (d == @) return 1;
+	if (type(d) != "list")
+		return 0;
+	for (i = d#; i > 0; --i) {
+		if (idv(d[i]))
+			return 1;
+	}
+	return 0;
+}
+
+/* real to string conversion using sprintf(), see sprintf(3) for format spec */
+func rtos { para r, format;
+	auto s;
+	s = substr("", 1, 255); /* create a 255-char long string */
+	sprintf(s, "%"//format, r);
+	if (s# > 255) { error("rtos: goofed up with memory allocation"); }
+	return s;
+}
+
+func DD_random
+{
+	if (type($1) == "int") {
+		return rand() % $1;
+	} else {
+		return rand() * $1 / 2147483647;
+	}
+}
+
+/* POINT */
+func cart
+{
+	return [CART, $1, $2];		/* [ CART, X, Y ] */
+}
+
+/* POINT */
+func polar
+{
+	return [POLAR, $1, $2];		/* [ POLAR, R, A ] */
+}
+
+/* LINE */
+func line
+{
+	return [LINE, $1, $2];		/* [ LINE, P1, P2 ] */
+}
+
+/* ARC */
+func arc
+{
+	return [ARC, $1, $2, $3];	/* [ LINE, P1, P2, ANGLE ] */
+}
+
+/* CIRCLE */
+func circle
+{
+	return [CIRCLE, $1, $2];		/* [ CIRCLE, P, R] */
+}
+
+/* RECTANGLE */
+func rectangle
+{
+	return [RECTANGLE, $1, $2];		/* [ RECTANGLE, P1, P2] */
+}
+
+/* ELLIPSE */
+func ellipse
+{
+	return [ELLIPSE, $1, $2, $3];		/* [ ELLIPSE, P, P, P] */
+}
+
+/* LABEL */
+func image	/* CHAR $1; POINT $2; */
+{
+	return [IMAGE, $1, $2];		/* [ IMAGE, T, P] */
+}
+
+/* LABEL */
+func label	/* CHAR $1; POINT $2; */
+{
+	return [LABEL, $1, $2];		/* [ LABEL, T, P] */
+}
+
+/*
+/* MONITOR */
+func monitor
+{
+	return [MONITOR, $2, $1, $3];	/* [ MONITOR, mesg1, bool, mesg2 ] */
+}
+*/
+
+/* SHAPE */
+/* Takes a list of pointers (an OPENSHAPE) and dereferences each item
+   recursively.  Thus translating ["O", &t, &v] into ["S", t, v] [Ash]
+*/
+func open2shape
+{
+	para	openShape;
+	auto	shape, entity, i;
+
+	if (openShape == @) return @;
+	if (openShape[1] != 'O') error("open2shape given " // openShape[1] //
+		" type and not an openshape");
+
+	shape = [SHAPE];
+	for (i = 2; i <= openShape#; i++) {
+		entity = *(openShape[i]);
+		if (type(entity) == "list")
+		    if (entity[1] == 'O')
+			shape = shape // [open2shape(entity)];
+		    else
+			shape = shape // [entity];
+	}
+	return shape;
+}
+
+/* POINT */
+func intersect
+{
+	para	line1, line2;
+	auto	a1, a2, b1, b2, c1, c2, s, t;
+
+	if (idv(line1) || idv(line2)) return @;
+	a1 = line1[3][3] - line1[2][3];	/* implicit eqn */
+	b1 = line1[2][2] - line1[3][2];	/* of line line1   */
+	c1 = line1[2][3] * line1[3][2] - line1[3][3] * line1[2][2];
+
+	a2 = line2[3][3] - line2[2][3];	/* implicit eqn */
+	b2 = line2[2][2] - line2[3][2];	/* of line line2   */
+	c2 = line2[2][3] * line2[3][2] - line2[3][3] * line2[2][2];
+
+	if (a1 * b2 == a2 * b1)
+	    writeln("intersect(): Can't happen on parallel lines");
+	else {		/* find intersection of lines */
+	    s = (b1 * c2 - b2 * c1) / (a1 * b2 - a2 * b1);
+	    t = (c1 * a2 - c2 * a1) / (a1 * b2 - a2 * b1);
+	    return [CART, s, t];
+	}
+}
+
+/* LINE */
+func parallel
+{
+	para	line, point, alpha, beta;
+	auto	a1, a2, b1, b2, m;
+
+	if (idv(line) || idv(point) || alpha == @ || beta == @) return @;
+	alpha = float(alpha);	/* make sure it is real number */
+	beta = float(beta);
+
+	/* vert and horiz lines have no gradient */
+	/* parallel lines have the same gradient */
+	m = (line[2][2] == line[3][2] || line[2][3] == line[3][3])
+		? 0.0
+		: float(line[3][3] - line[2][3] / line[3][2] - line[2][2]);
+
+	if (line[2][2] == line[3][2]) {	/* line is vertical */
+	    b1 = point[3] - alpha;
+	    b2 = point[3] + beta;
+
+	    if (m == 0)
+		a1 = a2 = float(point[2]);
+	    else {
+		a1 = (b1 - point[3]) / m + point[2];
+		a2 = (b2 - point[3]) / m + point[2];
+	    }
+	} else {		/* line is horizontal or other */
+	    a1 = point[2] - alpha;
+	    b1 = (a1 - point[2]) * m + point[3];
+	    a2 = point[2] + beta;
+	    b2 = (a2 - point[2]) * m + point[3];
+	}
+	return [LINE, [CART, a1, b1], [CART, a2, b2]];
+}
+
+ /* LINE */
+func perpend
+{
+	para	point, line;
+	auto	a1, a2, b1, b2, c1, c2, x, y;
+
+	if (idv(point) || idv(line)) return @;
+				/* implicit eqn of point $1 */
+	a1 = float(line[2][2] - line[3][2]);
+	b1 = float(line[2][3] - line[3][3]);
+	c1 = -a1 * point[2] - b1 * point[3];
+
+				/* implicit eqn of line $2 */
+	a2 = float(line[3][3] - line[2][3]);
+	b2 = float(line[2][2] - line[3][2]);
+	c2 = float(line[2][3] * line[3][2] - line[3][3] * line[2][2]);
+
+				/* find perpendicular */
+	x = (b1 * c2 - b2 * c1) / (a1 * b2 - a2 * b1);
+	y = (c1 * a2 - c2 * a1) / (a1 * b2 - a2 * b1);
+
+	return [LINE, point, [CART, x, y]];
+}
+
+/* REAL */
+func dist		/* POINT(LINE) $1; POINT(LINE) $2 */
+{
+	para	arg1, arg2;
+	auto	a, b, c;
+
+	if (idv(arg1) || idv(arg2)) return @;
+	switch (arg1[1]) {
+	case 'C':
+	case 'P':
+	    if (arg1[1] == POLAR)
+		arg1 = polar_to_cart(arg1);
+	    if (arg2[1] == POLAR)
+		arg2 = polar_to_cart(arg2);
+	    a = (arg1[2] - arg2[2]) * (arg1[2] - arg2[2]);
+	    b = (arg1[3] - arg2[3]) * (arg1[3] - arg2[3]);
+	    return sqrt(float(a + b));
+
+	case 'L':
+	    if (arg1[2][1] == POLAR) arg1[2] = polar_to_cart(arg1[2]);
+	    if (arg1[3][1] == POLAR) arg1[3] = polar_to_cart(arg1[3]);
+	    if (arg2[2][1] == POLAR) arg2[2] = polar_to_cart(arg2[2]);
+	    if (arg2[3][1] == POLAR) arg2[3] = polar_to_cart(arg2[3]);
+	    a = arg1[3][3] - arg1[2][3];
+	    b = arg1[3][2] - arg1[2][2];
+	    c = arg1[2][3] * arg2[2][2] - arg1[3][3] * arg1[2][2];
+	    return sqrt(float(a * arg2[2] + b * arg2[3] + c)) *
+		    (a * arg2[2] + b * arg2[3] + c) / (a * a + b * b);
+	}
+}
+
+/* POINT */
+func midpoint
+{
+	para	line;
+	auto	s, t;
+
+	if (idv(line)) return @;
+	if (line[2][1] == POLAR) line[2] = polar_to_cart(line[2]);
+	if (line[3][1] == POLAR) line[3] = polar_to_cart(line[3]);
+	s = (line[2][2] + line[3][2]) / 2.0;
+	t = (line[2][3] + line[3][3]) / 2.0;
+	return [CART, s, t];
+}
+
+
+/* ENTITY */
+func trans
+{
+	para	entity, x, y;
+	auto	point, i;
+	
+	if (idv(entity) || x == @ || y == @) return @;
+	point = [CART, x, y];
+	switch (entity[1]) {
+	case 'C':
+	case 'P':
+	    return vector_add(entity, point);
+
+	case 'R':
+	    writeln("trans(): Can't happen on ", entity[1]);
+	    break;
+
+	case 'L':
+	    return [LINE, vector_add(entity[2], point),
+			  vector_add(entity[3], point)];
+
+	case 'U':
+	    return [ARC, vector_add(entity[2], point),
+			 vector_add(entity[3], point), entity[4]];
+
+	case 'E':
+	    return [CIRCLE, vector_add(entity[2], point), entity[3]];
+
+	case 'G':
+	    return [RECTANGLE, vector_add(entity[2], point), 
+	                       vector_add(entity[3], point)];
+
+	case 'Q' :
+	    return[ELLIPSE, vector_add(entity[2],point),
+			    vector_add(entity[3],point),
+			    vector_add(entity[4],point)];
+
+	case 'L':	/* 3D line ? */
+	    return [LINE, vector_add(entity[2], point),
+			  vector_add(entity[3], point),
+			  vector_add(entity[4], point)];
+
+	case 'O': entity = open2shape(entity);
+	case 'S': for (i = 2; i <= entity#; i++)
+		      entity[i] = trans(entity[i], x, y);
+		  return entity;
+	case 'T': return [LABEL, entity[2], vector_add(entity[3], point)];
+	case 'I': return [IMAGE, entity[2], vector_add(entity[3], point)];
+	}
+}
+
+/* ENTITY */
+func rot
+{
+	para	entity, point, angle;
+	auto	i, s, t, dx, dy, center;
+	auto	s1, t1, s2, t2;
+
+	if (idv(entity) || idv(point) || angle == @) return @;
+	angle = float(angle);
+	switch (entity[1]) {
+	case 'C':
+	case 'P':
+	    if (entity[1] == POLAR) entity = polar_to_cart(entity);
+	    if (point[1] == POLAR) point = polar_to_cart(point);
+	    dx = entity[2] - point[2];
+	    dy = entity[3] - point[3];
+
+	    s = dx * cos(angle) - dy * sin(angle) + point[2];
+	    t = dx * sin(angle) + dy * cos(angle) + point[3];
+	    return [CART, s, t];
+
+	case 'R':
+	    writeln("rot(): Can't happen on ", entity[1]);
+	    return entity;
+
+	case 'L':
+	    return [LINE,
+		    rot(entity[2], point, angle),
+		    rot(entity[3], point, angle)];
+
+	case 'U':
+	    return [ARC,
+		    rot(entity[2], point, angle),
+		    rot(entity[3], point, angle), entity[4]];
+
+	case 'E':
+	    return [CIRCLE, rot(entity[2], point, angle), entity[3]];
+
+	case 'G':
+	    return [RECTANGLE,
+		    rot(entity[2], point, angle),
+		    rot(entity[3], point, angle)];
+
+	case 'Q':
+	    return [ELLIPSE,
+		    rot(entity[2], point, angle),
+		    rot(entity[3], point, angle),
+		    rot(entity[4], point, angle)];
+
+	case 'O': entity = open2shape(entity);
+	case 'S': for (i = 2; i <= entity#; i++)
+		      entity[i] = rot(entity[i], point, angle);
+		  return entity;
+
+	case 'T': return [LABEL, entity[2], rot(entity[3], point, angle)];
+
+	case 'I': return [IMAGE, entity[2], rot(entity[3], point, angle)];
+	}
+}
+
+/* ENTITY */
+func scale
+{
+	para	entity, factor;
+	auto	i, dx, dy, s1, s2, t1, t2, r, center;
+
+	if (idv(entity) || factor == @) return @;
+	switch (entity[1]) {
+	case 'P':
+	    entity = polar_to_cart(entity);
+	case 'C':
+	    return [CART, entity[2] * factor, entity[3] * factor];
+	case 'L' :
+	    return [LINE, scale(entity[2], factor), scale(entity[3], factor)];
+	case 'E' :
+	    r = entity[3] * factor;	/* scale radius */
+	    center = scale(entity[2], factor);
+	    return [CIRCLE, center, r];
+	case 'G' :
+	    return [RECTANGLE, scale(entity[2], factor), scale(entity[3], factor)];
+	/* ARC ('U') case by Chris Roe, who mentioned that this might be
+	   a fudge as it doesn't scale the arc's "bend" */
+	case 'U' : return [ARC, scale(entity[2], factor), scale(entity[3], factor), entity[4]];
+	case 'Q' :
+	    return [ELLIPSE, scale(entity[2], factor),
+			     scale(entity[3], factor),
+			     scale(entity[4], factor)];
+	case 'O': entity = open2shape(entity);
+	case 'S': for (i = 2; i <= entity# ; i++)
+			entity[i] = scale(entity[i], factor);
+		  return entity;
+	case 'T': return [LABEL, entity[2], scale(entity[3], factor)];
+	case 'I': return [IMAGE, entity[2], scale(entity[3], factor)];
+	}
+}
+
+/* A scale function that can scale in both x and y directions. [Ant][19/10/2005] */
+func scalexy
+{
+	para	entity, factorx, factory;
+	auto	i, dx, dy, s1, s2, t1, t2, r, center;
+
+	if (idv(entity) || factorx == @ || factory == @) return @;
+	switch (entity[1]) {
+	case 'P':
+	    entity = polar_to_cart(entity);
+	case 'C':
+	    return [CART, entity[2] * factorx, entity[3] * factory];
+	case 'L' :
+	    return [LINE, scalexy(entity[2], factorx, factory), scalexy(entity[3], factorx, factory)];
+	case 'E' :
+	    r = entity[3] * factorx;	/* scale radius */
+	    center = scalexy(entity[2], factorx, factory);
+	    return [CIRCLE, center, r];
+	case 'G' :
+	    return [RECTANGLE, scalexy(entity[2], factorx, factory), scalexy(entity[3], factorx, factory)];
+	/* ARC ('U') case by Chris Roe, who mentioned that this might be
+	   a fudge as it doesn't scalexy the arc's "bend" */
+	case 'U' : return [ARC, scalexy(entity[2], factorx, factory), scalexy(entity[3], factorx, factory), entity[4]];
+	case 'Q' :
+	    return [ELLIPSE, scalexy(entity[2], factorx, factory),
+			     scalexy(entity[3], factorx, factory),
+			     scalexy(entity[4], factorx, factory)];
+	case 'O': entity = open2shape(entity);
+	case 'S': for (i = 2; i <= entity# ; i++)
+			entity[i] = scalexy(entity[i], factorx, factory);
+		  return entity;
+	case 'T': return [LABEL, entity[2], scalexy(entity[3], factorx, factory)];
+	case 'I': return [IMAGE, entity[2], scalexy(entity[3], factorx, factory)];
+	}
+}
+
+
+/* The reflect Eden function below is by Chris Roe.  The
+   implement-it-as-a-builtin stuff is Ash's fault. */
+func reflect {
+	para entity, line;
+	auto i, s, t, l, px, py, center;
+	auto s1, t1, s2, t2;
+
+	if (idv(entity) || idv(line) == @) return @;
+	switch (entity[1]) {
+	case 'C':
+	case 'P':
+	    if (entity[1] == POLAR) entity = polar_to_cart(entity);
+	    l = perpend([CART,entity[2],entity[3]],line);
+	    px = l[3][2]; /* intersection point of the normal and the mirror */
+	    py = l[3][3]; /* is the point at which reflection takes place    */
+	    
+	    s = entity[2] + (2*(px-entity[2]));
+	    t = entity[3] + (2*(py-entity[3]));
+
+	    return [CART, s, t];
+
+	case 'R':
+	    writeln("reflect(): Can't happen on ", entity[1]);
+	    return entity;
+
+	case 'L':
+	    return [LINE,
+		    reflect(entity[2], line),
+		    reflect(entity[3], line)];
+
+	case 'U':
+	    return [ARC,
+		    reflect(entity[2], line),
+		    reflect(entity[3], line), entity[4]];
+
+	case 'E':
+	    return [CIRCLE, reflect(entity[2], line), entity[3]];
+
+	case 'G':
+	    return [RECTANGLE,
+		    reflect(entity[2], line),
+		    reflect(entity[3], line)];
+
+	case 'Q':
+	    return [ELLIPSE,
+		    reflect(entity[2], line),
+		    reflect(entity[3], line),
+		    reflect(entity[4], line)];
+
+	case 'O': entity = open2shape(entity);
+	case 'S': for (i = 2; i <= entity#; i++)
+		      entity[i] = reflect(entity[i], line);
+		  return entity;
+
+	case 'T': return [LABEL, entity[2], reflect(entity[3], line)];
+
+	case 'I': return [IMAGE, entity[2], reflect(entity[3], line)];
+	}
+
+}
+
+/* LINE */
+func line_reverse
+{
+	if ($1 == @) return @;
+	return [LINE, $1[3], $1[2]];
+}
+
+/* POINT */
+func dotx
+{
+	para point;
+	if (point == @) return @;
+	point = polar_to_cart(point);
+	return [CART, point[2], 0.0];
+}
+
+/* POINT */
+func doty
+{
+	para point;
+	if (point == @) return @;
+	point = polar_to_cart(point);
+	return [CART, 0.0, point[3]];
+}
+
+func dot1
+{
+	if ($1 == @) return @;
+	return $1[2];
+}
+
+func dot2
+{
+	if ($1 == @) return @;
+	return $1[3];
+}
+
+func dotrad
+{
+	if ($1 == @) return @;
+	return cart_to_polar($1)[2];
+}
+
+func dotarg
+{
+	if ($1 == @) return @;
+	return cart_to_polar($1)[3];
+}
+
+func vector_add
+{
+	para	point1, point2;
+
+	if (idv(point1) || idv(point2)) return @;
+	if (point1[1] == POLAR) point1 = polar_to_cart(point1);
+	if (point2[1] == POLAR) point2 = polar_to_cart(point2);
+	return [CART, point1[2] + point2[2], point1[3] + point2[3]];
+}
+func vector_sub
+{
+	para	point1, point2;
+
+	if (idv(point1) || idv(point2)) return @;
+	if (point1[1] == POLAR) point1 = polar_to_cart(point1);
+	if (point2[1] == POLAR) point2 = polar_to_cart(point2);
+	return [CART, point1[2] - point2[2], point1[3] - point2[3]];
+}
+func scalar_mult
+{
+	para	point, value;
+
+	if (idv(point) || idv(value)) return @;
+	if (point[1] == POLAR)
+		return [POLAR, float(point[3]) * value, point[2]];
+	else 
+		return [CART, float(point[2]) * value, float(point[3] * value)];
+}
+func scalar_div
+{
+	para	point, value;
+
+	if (idv(point) || idv(value)) return @;
+	if (point[1] == POLAR)
+		return [POLAR, float(point[3]) / value, point[2]];
+	else 
+		return [CART, float(point[2]) / value, float(point[3] / value)];
+}
+
+func scalar_mod
+{
+	para	point, value;
+
+	if (idv(point) || idv(value)) return @;
+	if (point[1] == POLAR)
+		return [POLAR, int(point[3]) % int(value), point[2]];
+	else 
+		return [CART, int(point[2]) % int(value), int(point[3]) %
+		int(value)];
+}
+
+
+/* ----- BOOLEAN CONDITIONS ----- */
+
+/* BOOLEAN */
+func pt_betwn_pts
+{
+	para	point1, point2, point3;
+
+	if (idv(point1) || idv(point2) || idv(point3)) return @;
+	if (point1[1] == POLAR) point1 = polar_to_cart(point1);
+	if (point2[1] == POLAR) point2 = polar_to_cart(point2);
+	return
+		(   (point1[2] <= point2[2] && point2[2] <= point3[2])
+		 || (point1[2] >= point2[2] && point2[2] >= point3[2])
+		)
+		&&
+		(   (point1[3] <= point2[3] && point2[3] <= point3[3])
+		 || (point1[3] >= point2[3] && point2[3] >= point3[3])
+		)
+	;
+}
+
+
+
+/* BOOLEAN */
+func colinear
+{
+	para	point1, point2, point3;
+	auto	dab, dbc, dac;
+
+	if (idv(point1) || idv(point2) || idv(point3)) return @;
+	dab = dist(point1, point2);
+	dbc = dist(point2, point3);
+	dac = dist(point1, point3);
+
+	return dab == dbc + dac || dac == dab + dbc || dbc == dab + dac;
+}
+
+
+
+/* BOOLEAN */
+func intersects
+{
+	para	line1, line2;
+	auto	a1, a2, b1, b2, c1, c2, s, t;
+
+	if (idv(line1) || idv(line2)) return @;
+	a1 = float(line1[3][3] - line1[2][3]);	/* implicit eqn */
+	b1 = float(line1[2][2] - line1[3][2]);	/* of line1   */
+	c1 = float(line1[2][3] * line1[3][2] - line1[3][3] * line1[2][2]);
+
+	a2 = float(line2[3][3] - line2[2][3]);	/* implicit eqn */
+	b2 = float(line2[2][2] - line2[3][2]);	/* of line2   */
+	c2 = float(line2[2][3] * line2[3][2] - line2[3][3] * line2[2][2]);
+
+	if (a1 * b2 == a2 * b1) {
+	    writeln("intersect(): Can't happen on parallel lines");
+	    return FALSE;
+	} else {		/* find point of intersection */
+
+	    s = (b1 * c2 - b2 * c1) / (a1 * b2 - a2 * b1);	/* x co-ord */
+	    t = (c1 * a2 - c2 * a1) / (a1 * b2 - a2 * b1);	/* y co-ord */
+	    if (pt_betwn_pts(line1[2], [CART, s, t], line1[3]) &&
+		pt_betwn_pts(line2[2], [CART, s, t], line2[3]))
+		return TRUE;	/* intersection of */
+	    else
+		return FALSE;	/* actual line only */
+	}
+}
+
+/* BOOLEAN */
+func separates
+{
+	para	line, point1, point2;
+	auto	a1, a2, a3, b1, b2, b3, c1, c2, c3, s2, s3;
+
+	if (idv(line) || idv(point1) || idv(point2)) return @;
+	a1 = float(line[3][3] - line[2][3]);	/* implicit eqn */
+	b1 = float(line[2][2] - line[3][2]);	/* line $1	*/
+	c1 = float(line[2][3] * line[3][2] - line[3][3] * line[2][2]);
+
+	/* perpendicular line from point2 to line */
+	a2 = float(line[2][2] - line[3][2]);
+	b2 = float(line[2][3] - line[3][3]);
+
+	c2 = -a2 * point1[2] - b2 * point1[3];
+
+	a3 = a2;		/* perpendicular line */
+	b3 = b2;		/* from point2 to line	    */
+	c3 = -a3 * point2[2] - b3 * point2[3];
+
+	s2 = (b1 * c2 - b2 * c1) / (a1 * b2 - a2 * b1);
+	s3 = (b1 * c3 - b3 * c1) / (a1 * b3 - a3 * b1);
+	if (point1[2] > s2 && point2[2] > s3)
+	    return FALSE;	/* Points on +side of line */
+
+	if (point1[2] < s2 && point2[2] < s3)
+	    return FALSE;	/* Points on -side of line */
+	else
+	    return TRUE;	/* Line separates points   */
+}
+
+
+/* BOOLEAN */
+func includes
+{
+	para	Circle, point;
+	auto	s, t;
+
+	if (idv(Circle) || idv(point)) return @;
+	s = (Circle[2][2] - point[2]) * (Circle[2][2] - point[2]);
+	t = (Circle[2][3] - point[3]) * (Circle[2][3] - point[3]);
+	return (sqrt(float (s + t)) <= Circle[3]);
+}
+
+/* BOOLEAN */
+func incident
+{
+	para	entity, point;
+	auto	s, t;
+
+	if (idv(entity) || idv(point)) return @;
+	switch (entity[1]) {
+	case 'L':		/* LINE */
+	    return (colinear(entity[2], point, entity[3]));
+
+	    /* substitute x- and y- coordinate into circle */
+	case 'E':		/* CIRCLE */
+	    s = (entity[2][2] - point[2]) * (entity[2][2] - point[2]);
+	    t = (entity[2][3] - point[3]) * (entity[2][3] - point[3]);
+	    return (sqrt(float(s + t)) == entity[3]);
+	}
+}
+
+
+/* BOOLEAN */
+func distlarger
+{
+	para	entity, point, value;
+	auto	a, b, c, d;
+
+	if (idv(entity) || idv(point) || idv(value)) return @;
+	switch (entity[1]) {
+	case 'C':
+	case 'P':
+	    if (entity[1] == POLAR) entity = polar_to_cart(entity);
+	    if (point[1] == POLAR) point = polar_to_cart(point);
+	    a = (entity[2] - point[2]) * (entity[2] - point[2]);
+	    b = (entity[3] - point[3]) * (entity[3] - point[3]);
+	    d = sqrt(float(a + b));
+	    return d > value;
+
+	case 'L':
+	    if (entity[2][1] == POLAR)
+		entity[2] = polar_to_cart(entity[2]);
+	    if (entity[3][1] == POLAR)
+		entity[3] = polar_to_cart(entity[3]);
+	    if (point[1] == POLAR) point = polar_to_cart(point);
+	    a = entity[3][3] - entity[2][3];
+	    b = entity[3][2] - entity[2][2];
+	    c = entity[2][3] * entity[2][2] - entity[3][3] * entity[2][2];
+	    d = sqrt(float(a * point[2] + b * point[3] + c)) *
+		    (a * point[2] + b * point[3] + c) / (a * a + b * b);
+	    return d > value;
+	}
+}
+
+
+/* BOOLEAN */
+func distsmaller
+{
+	para	entity, point, value;
+	auto	a, b, c, d;
+
+	if (idv(entity) || idv(point) || idv(value)) return @;
+	switch (entity[1]) {
+	case 'C':
+	case 'P':
+	    if (entity[1] == POLAR) entity = polar_to_cart(entity);
+	    if (point[1] == POLAR) point = polar_to_cart(point);
+	    a = (entity[2] - point[2]) * (entity[2] - point[2]);
+	    b = (entity[3] - point[3]) * (entity[3] - point[3]);
+	    d = sqrt(float(a + b));
+	    return d < value;
+
+	case 'L':
+	    if (entity[2][1] == POLAR)
+		entity[2] = polar_to_cart(entity[2]);
+	    if (entity[3][1] == POLAR)
+		entity[3] = polar_to_cart(entity[3]);
+	    if (point[1] == POLAR) point = polar_to_cart(point);
+	    a = entity[3][2] - entity[2][2];
+	    b = entity[3][3] - entity[2][3];
+	    c = entity[2][3] * entity[2][2] - entity[3][3] * entity[2][2];
+	    d = sqrt(float(a * point[2] + b * point[3] + c)) *
+		    (a * point[2] + b * point[3] + c) / (a * a + b * b);
+	    return d < value;
+	}
+}
+
+func cart_to_polar {
+	para cart;
+	if (idv(cart)) return @;
+	if (cart[1] == POLAR) return cart;
+	if (cart[1] != CART) error("argument is not in cart coordinate");
+	cart[2] = float(cart[2]);
+	cart[3] = float(cart[3]);
+	if (cart[2] == 0.0 && cart[3] == 0.0)
+		return [POLAR, 0.0, 0.0];
+	return [POLAR, sqrt(cart[2]*cart[2]+cart[3]*cart[3]),
+		atan2(cart[3], cart[2])];
+}
+
+func polar_to_cart {
+	para polar;
+	if (idv(polar)) return @;
+	if (polar[1] == CART) return polar;
+	if (polar[1] != POLAR) error("argument is not in polar coordinate");
+	return [CART,
+		polar[2] * cos(float(polar[3])),
+		polar[2] * sin(float(polar[3]))];
+}
+
+func toComma {
+	para s;
+	auto i;
+	for (i = 1; i <= s# && s[i] != ','; i++);
+	return (i > 0) ? substr(s, 1, i-1) : "";
+}
+
+func lookAttr {
+	para s, attr;
+	auto head;
+
+	if (s# <= attr# + 1)
+		return "";
+	head = toComma(s);
+	if (substr(s, 1, attr#+1) == (attr//"="))
+		return substr(head, attr#+2, head#);
+	else
+		if (s# > head# + 1 + attr# + 1)
+			return lookAttr(substr(s, head# + 2, s#), attr);
+		else
+			return "";
+}
+
+/* ----- GRAPHICS DRAWING ROUTINE ----- */
+
+_tkeden_showxoutput = 0;
+
+/* Determins if weden is enabled */
+_weden_enabled = 1;
+
+/* Determins if weden commands should be output to the consol [richard] */
+_weden_outputDebugInfo = 1;
+
+proc xoutput
+{
+	auto	i, s;
+
+	if ($# == 0)
+		return;
+
+	s = str($1);
+	for (i = 2; i <= $#; i++)
+		s = strcat(s, " ", str($[i]));
+	/* do '_tkeden_showxoutput = 1;' to debug Donald graphics [Ash] */
+	if (_tkeden_showxoutput) writeln("xoutput: tcl(\"", s, "\");");
+	tcl(s);
+	
+}
+
+/* Outputs to the command line the command being set to weden [richard] */
+proc wedenServerOutput
+{
+	auto s;
+	
+	
+	if ($# == 0) {
+		writeln("Nothing Found!!!");
+		return;
+	}
+	s = str($1);
+	for (i = 2; i <= $#; i++)
+		s = strcat(s, " ", str($[i]));
+	writeln("WEDEN : ", s);
+}
+
+/* Calls the delete function for a shape when one is updated/moved [richard] */
+proc remove_shape
+{
+	para	viewport_name, segid;
+	
+	xdelete(viewport_name, segid);
+
+}
+
+
+proc xdelete
+{
+	para	viewport_name, segid;
+	
+	xoutput("if [winfo exists", viewport_name, "] {",viewport_name, "delete", "t"//str(int(segid)), "}");
+	
+	if (weden_UsingWebEden == 1) {
+		weden_SendEDENOutput("<d><item type=\"removeshape\">"																	//
+								"<object id=\"t"//str(int(segid))//"\" containerid=\""//viewport_name//"\" />" 					//
+	 						"</item></d>");
+	}
+	
+}
+
+
+proc xpoint
+{
+	para	viewport_name, segid, x, y, attr,
+			xOrigin, yOrigin, xScale, yScale;
+	auto 	command, color, tclVarNameStart;
+
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	color = lookAttr(*attr, "color");
+	color = (color == "") ? getTclVariable(tclVarNameStart//"_fg") : color;
+
+	x = x * xScale + xOrigin;
+	y = y * yScale + yOrigin;
+	xoutput(command, "create line", x, y, x, y, "-fill ", color, "-tags {all t"//str(int(segid))//"}");
+	
+	if (weden_UsingWebEden == 1) {
+		weden_SendEDENOutput("<d><item type=\"drawpoint\">" 																	//
+								"<object id=\"t"//str(int(segid))//"\" containerid=\""//command//"\">" 							//
+									"<position x1=\""//str(x)//"\" y=\""//str(y)//"\" />"										//
+									"<attributes>"																				//
+										"<color>"//color//"</color>"															//
+									"</attributes>"																				//
+	 							"</object>" 																					//
+	 						"</item></d>");
+	}
+}
+
+proc xline
+{
+	para	viewport_name, segid, x1, y1, x2, y2, attr, xOrigin, yOrigin, xScale, yScale;
+	auto 	command, val, opt, tclVarNameStart, color, lineEndStyle, lineWidth, lineStyle;
+	
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	val = lookAttr(*attr, "color");
+	color = ((val == "") ? getTclVariable(tclVarNameStart//"_fg") : val);
+	opt = "-fill " // color;
+	
+	
+	val = lookAttr(*attr, "arrow");
+	lineEndStyle = ((val == "") ? "none" : val);
+	opt = opt // " -arrow " // lineEndStyle;
+	
+	val = lookAttr(*attr, "linewidth");
+	if (val != "") {
+		lineWidth = val;
+		opt = opt // " -width " // val;
+	} else {
+		lineWidth = "1";
+	}
+	
+	val = lookAttr(*attr, "linestyle");
+	if (val == "dashed") {
+		opt = opt // dashedopt;
+		lineStyle = "dashed";
+	} else if (val == "dotted") {
+		opt = opt // dottedopt;
+		lineStyle = "dotted";
+	} else {
+		lineStyle = "solid";
+	}
+
+	x1 = x1 * xScale + xOrigin;
+	y1 = y1 * yScale + yOrigin;
+	x2 = x2 * xScale + xOrigin;
+	y2 = y2 * yScale + yOrigin;
+	xoutput(command, "create line", x1, y1, x2, y2, opt, "-tags {all t"//str(int(segid))//"}");
+	
+	
+	if (weden_UsingWebEden == 1) {
+		weden_SendEDENOutput("<d><item type=\"drawline\">" 																	//
+								"<object id=\"t"//str(int(segid))//"\" containerid=\""//command//"\">" 						//
+									"<position x1=\""//str(x1)//"\" y1=\""//str(y1)//"\" x2=\""//str(x2)//"\" y2=\""//str(y2)//"\" />"			//
+									"<attributes>"																			//
+										"<color>"//color//"</color>"														//
+										"<linestyle>"//lineStyle//"</linestyle>"											//
+										"<endlinestyle>"//lineEndStyle//"</endlinestyle>"									//
+										"<linethickness>"//lineWidth//"</linethickness>"									//
+									"</attributes>"																			//
+	 							"</object>" 																				//
+	 						"</item></d>");
+ 	}
+}
+
+proc xrectangle
+{
+	para	viewport_name, segid, x1, y1, x2, y2, attr, xOrigin, yOrigin, xScale, yScale;
+	auto 	command, col, val, tclVarNameStart, opt, outcol;
+	
+	auto 	color, lineEndStyle, lineWidth, lineStyle, useFillColor, fillColor;
+
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	
+	opt = "";
+	
+	outcol = lookAttr(*attr, "outlinecolor");
+	color = ((outcol == "") ? getTclVariable(tclVarNameStart//"_fg") : outcol);
+	opt = "-outline " // color;
+	
+	col = lookAttr(*attr, "color");
+	val = lookAttr(*attr, "fill");
+	
+	if (val == "solid") {
+		
+		useFillColor = "1";
+		if (col == "") {
+			opt = opt // " -fill ${"//tclVarNameStart//"_fg}";
+			fillColor = getTclVariable(tclVarNameStart//"_fg");
+		} else {
+			opt = opt // " -fill " // col;
+			fillColor = str(col);
+		}
+		
+	} else {
+		opt = opt // " -fill {}";
+		useFillColor = "0";
+		fillColor = "";
+	}
+	
+	val = lookAttr(*attr, "linewidth");
+	if (val != "") {
+		lineWidth = val;
+		opt = opt // " -width " // val;
+	} else {
+		lineWidth = "1";
+		opt = opt // " -width 1.0";
+	}
+
+	val = lookAttr(*attr, "linestyle");
+	if (val == "dashed") {
+		opt = opt // dashedopt;
+		lineStyle = "dashed";
+	} else { 
+		if (val == "dotted") {
+			opt = opt // dottedopt;
+			lineStyle = "dotted";
+		} else {
+			lineStyle = "solid";
+		}
+	}
+
+
+
+	x1 = x1 * xScale + xOrigin;
+	y1 = y1 * yScale + yOrigin;
+	x2 = x2 * xScale + xOrigin;
+	y2 = y2 * yScale + yOrigin;
+	xoutput(command, "create rect", x1, y1, x2, y2, opt, "-tags {all t"//str(int(segid))//"}");
+
+	if (weden_UsingWebEden == 1) {
+		weden_SendEDENOutput("<d><item type=\"drawrectangle\">" 															//
+								"<object id=\"t"//str(int(segid))//"\" containerid=\""//command//"\">" 						//
+									"<position x1=\""//str(x1)//"\" y1=\""//str(y1)//"\" x2=\""//str(x2)//"\" y2=\""//str(y2)//"\" />"			//
+									"<attributes>"																			//
+										"<color>"//color//"</color>"														//
+										"<linestyle>"//lineStyle//"</linestyle>"											//
+										"<linethickness>"//lineWidth//"</linethickness>"									//
+										"<fillcolor enable=\""//useFillColor//"\">"//fillColor//"</fillcolor>"				//
+									"</attributes>"																			//
+	 							"</object>" 																				//
+	 						"</item></d>");
+	}
+}
+
+proc xarc
+{
+	para	viewport_name, segid, x1, y1, x2, y2, a, attr,
+			xOrigin, yOrigin, xScale, yScale;
+	
+	auto 	p1, p2, cx, cy, r, rad, b, c, start, col, outcol;
+	auto 	command, val, opt, tclVarNameStart;
+
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	if ((a >= 0 ? a : -a) < 1.0) {
+		/* small angle, treat as straight line */
+		x1 = x1 * xScale + xOrigin;
+		y1 = y1 * yScale + yOrigin;
+		x2 = x2 * xScale + xOrigin;
+		y2 = y2 * yScale + yOrigin;
+		xline(viewport_name, segid, x1, y1, x2, y2, xOrigin, yOrigin, xScale, yScale);
+		return;
+	}
+
+	col = lookAttr(*attr, "color");
+	opt = "-fill " // ((col == "") ? "${"//tclVarNameStart//"_fg}" : col);
+    
+    outcol = lookAttr(*attr, "outlinecolor");
+	opt = opt // " -outline " // ((outcol == "") ? "${"//tclVarNameStart//"_fg}" : outcol);
+	
+	val = lookAttr(*attr, "linewidth");
+	if (val != "")
+		opt = opt // " -width " // val;
+	val = lookAttr(*attr, "linestyle");
+	if (val == "dashed")
+		opt = opt // dashedopt;
+	else if (val == "dotted")
+		opt = opt // dottedopt;
+	val = lookAttr(*attr, "fill");
+	opt = opt // " -style " //
+		((val == "") ? "arc" : "pieslice");
+
+	/* treat it properly as a genuine arc */
+	a = float(a);
+	if (a > 360 || a < -360)
+		error("arc angle must be in between -360 and 360");
+	x1 = float(x1);
+	y1 = float(y1);
+	x2 = float(x2);
+	y2 = float(y2);
+	p1 = [CART, x1, y1];
+	p2 = [CART, x2, y2];
+	rad = a * PI / 180;
+	rad = rad >= 0 ? rad : 2 * PI + rad;
+	b = (PI - rad) / 2;
+	c = cart_to_polar(vector_sub(p2, p1))[3];
+	r = sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)) / 2 / sin(rad / 2);
+	r = r >= 0 ? r : -r;
+	cx = x1 + r * cos(c - b);
+	cy = y1 + r * sin(c - b);
+	start = 90 + (c - rad / 2) * 180 / PI;
+	start = start - int(start / 360) * 360;
+	start = start >= 0 ? start : start + 360;
+	x1 = (cx - r) * xScale + xOrigin;
+	y1 = (cy - r) * yScale + yOrigin;
+	x2 = (cx + r) * xScale + xOrigin;
+	y2 = (cy + r) * yScale + yOrigin;
+	xoutput(command, "create arc", x1, y1, x2, y2, "-start", start, "-extent", a, opt, "-tags {all t"//str(int(segid))//"}");
+}
+
+
+
+
+proc xcircle
+{
+	para	viewport_name, segid, x, y, r, attr, xOrigin, yOrigin, xScale, yScale;
+	auto 	command, col, val, tclVarNameStart, opt, outcol;
+
+	auto color, lineEndStyle, lineWidth, lineStyle, useFillColor, fillColor;
+
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	opt = "";
+
+	outcol = lookAttr(*attr, "outlinecolor");
+	color = ((outcol == "") ? getTclVariable(tclVarNameStart//"_fg") : outcol);
+	opt = "-outline " // color;
+	
+	col = lookAttr(*attr, "color");
+	val = lookAttr(*attr, "fill");
+	if (val == "solid") {
+		useFillColor = "1";
+		if (col == "") {
+			opt = opt // " -fill ${"//tclVarNameStart//"_fg}";
+			fillColor = getTclVariable(tclVarNameStart//"_fg");
+		} else {
+			opt = opt // " -fill " // col;
+			fillColor = str(col);
+		}
+	} else {
+		opt = opt // " -fill {}";
+		useFillColor = "0";
+		fillColor = "";
+	}
+	
+	val = lookAttr(*attr, "linewidth");
+	if (val != "") {
+		lineWidth = val;
+		opt = opt // " -width " // val;
+	} else {
+		lineWidth = "1";
+		opt = opt // " -width 1.0";
+	}
+	
+	val = lookAttr(*attr, "linestyle");
+	if (val == "dashed") {
+		opt = opt // dashedopt;
+		lineStyle = "dashed";
+	} else if (val == "dotted") {
+		opt = opt // dottedopt;
+		lineStyle = "dotted";
+	} else {
+		lineStyle = "solid";
+	}
+
+	x = x * xScale + xOrigin;
+	y = y * yScale + yOrigin;
+	xoutput(command, "create oval",	x-r*xScale, y-r*yScale, x+r*xScale, y+r*yScale,	opt, "-tags {all t"//str(int(segid))//"}");
+	
+	if (weden_UsingWebEden == 1) {
+		weden_SendEDENOutput("<d><item type=\"drawoval\">" 																							//
+								"<object id=\"t"//str(int(segid))//"\" containerid=\""//command//"\">" 												//
+									"<position x1=\""//str(x-r*xScale)//"\" y1=\""//str(y-r*yScale)//"\" x2=\""//str(x+r*xScale)//"\" y2=\""//str(y+r*yScale)//"\" />"	//
+									"<attributes>"																									//
+										"<color>"//color//"</color>"																				//
+										"<linestyle>"//lineStyle//"</linestyle>"																	//
+										"<linethickness>"//lineWidth//"</linethickness>"															//
+										"<fillcolor enable=\""//useFillColor//"\">"//fillColor//"</fillcolor>"										//
+									"</attributes>"																									//
+	 							"</object>" 																										//
+	 						"</item></d>");
+	}
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+proc xellipse
+{
+	para	viewport_name, segid, x0, y0, x1, y1, x2, y2, attr, xOrigin, yOrigin, xScale, yScale;
+	auto 	command, val, opt, tclVarNameStart, dx1, dy1, dx2, dy2, outcol;
+	auto	topLeftX, topLeftY, width, height;
+
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	val = lookAttr(*attr, "color");
+	opt = (val == "") ? "-fill ${"//tclVarNameStart//"_fg}" : "-fill "//val;
+	
+	val = lookAttr(*attr, "linewidth");
+	opt = opt // " -width " // ((val == "") ? "1.0" : val);
+	
+	val = lookAttr(*attr, "linestyle");
+	if (val == "dashed")
+		opt = opt // dashedopt;
+	else if (val == "dotted")
+		opt = opt // dottedopt;
+
+	x0 = x0 * xScale + xOrigin;
+	y0 = y0 * yScale + yOrigin;
+	x1 = x1 * xScale + xOrigin;
+	y1 = y1 * yScale + yOrigin;
+	x2 = x2 * xScale + xOrigin;
+	y2 = y2 * yScale + yOrigin;
+	
+	val = lookAttr(*attr, "fill");
+	dx1 = 4.0 * (x1 - x0) / 3;
+    dy1 = 4.0 * (y1 - y0) / 3;
+    dx2 = 4.0 * (x2 - x0) / 3;
+    dy2 = 4.0 * (y2 - y0) / 3;
+	
+	if (val == "") {
+		writeln(command // " create line" // " " // x0-dx2 // " " // y0-dy2 // " " // x0+dx1 // " " // y0+dy1 // " " // x0+dx2 // " " // y0+dy2 // " " // x0-dx1 // " " // y0-dy1 // " " // x0-dx2 // " " // y0-dy2 // " " // opt // " " // "-smooth true -splineste ps 5 -tags {all t"//str(int(segid))//"}");
+		xoutput(command, "create line", x0-dx2, y0-dy2, x0+dx1, y0+dy1, x0+dx2, y0+dy2, x0-dx1, y0-dy1, x0-dx2, y0-dy2, opt, "-smooth true -splineste ps 5 -tags {all t"//str(int(segid))//"}");
+	} else {
+        outcol = lookAttr(*attr, "outlinecolor");
+        opt = opt // " -outline " // ((outcol == "") ? "${"//tclVarNameStart//"_fg}" : outcol);
+        writeln(command // " " // "create polygon" // " " // str(x0-dx2) // " " // str(y0-dy2) // " " // str(x0+dx1) // " " // str(y0+dy1) // " " // str(x0+dx2) // " " // str(y0+dy2) // " " // str(x0-dx1) // " " // str(y0-dy1) // " " // str(x0-dx2) // " " // str(y0-dy2) // " " // opt // " " // "-smooth true -splinesteps 5 -tags {all t"//str(int(segid))//"}");
+		xoutput(command, "create polygon", x0-dx2, y0-dy2, x0+dx1, y0+dy1, x0+dx2, y0+dy2, x0-dx1, y0-dy1, x0-dx2, y0-dy2, opt, "-smooth true -splinesteps 5 -tags {all t"//str(int(segid))//"}");
+	}
+
+}
+
+proc xtext
+{
+	para	viewport_name, segid, x, y, text, attr, xOrigin, yOrigin, xScale, yScale;
+	auto 	command, tclVarNameStart, val, opt;
+	auto 	posX, posY, color, font;
+
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	opt = "-fill ";
+	val = lookAttr(*attr, "color");
+	if ( val == "" ) {
+		color = getTclVariable(tclVarNameStart//"_fg");
+	} else {
+		color = val;
+	}
+	
+	opt = opt // (val == "" ? "${"//tclVarNameStart//"_fg}" : val);
+
+	val = lookAttr(*attr, "font");
+	if ( val == "" ) {
+		font = getTclVariable(tclVarNameStart//"_font");
+	} else {
+		font = val;
+	}
+
+	if (substr(font,1,1)!="{") font = "{"//font//"}";
+
+	opt = opt // " -font " // font // "";
+
+	x = x * xScale + xOrigin;
+	y = y * yScale + yOrigin;
+	
+	xoutput(command, "create text", x, y, "-text {"//text//"}", opt, "-tags {all t"//str(int(segid))//"}");
+	
+	if (weden_UsingWebEden == 1) {
+		writeln("Drawing text in " // command);
+		weden_SendEDENOutput("<d><item type=\"drawtext\">" 																							//
+								"<object id=\"t"//str(int(segid))//"\" containerid=\""//command//"\">" 												//
+									"<position x=\""//str(x)//"\" y=\""//str(y)//"\" />"															//
+									"<text>" // text // "</text>"																					//
+									"<attributes>"																									//
+										"<color>"//color//"</color>"																				//
+										"<font>"//font//"</font>"																					//
+									"</attributes>"																									//
+	 							"</object>" 																										//
+	 						"</item></d>");
+	}
+	
+}
+
+
+
+proc ximage
+{
+	para	viewport_name, segid, x, y, image, attr, xOrigin, yOrigin, xScale, yScale;
+	auto	command, tclVarNameStart, val, opt;
+
+	tclVarNameStart = viewport_name[1]//"."//viewport_name[2];
+	command = "."//tclVarNameStart;
+
+	x = x * xScale + xOrigin;
+	y = y * yScale + yOrigin;
+	xoutput(command, "create image", x, y, "-image", image,	"-tags {all t"//str(int(segid))//"}");
+	
+	if (weden_UsingWebEden == 1) {
+		weden_SendEDENOutput("<b><item type=\"disabledcommand\"><edenname>Donald Image</edenname><reason code=\"3\">Donald Images are currently not supported by Web EDEN</reason></item></b>");
+	}
+	
+}
+
+
+
+
+/****************************************************************
+ *		      INITIALIZE ROOT CONTEXT			*
+ ****************************************************************/
+
+/*-----------------------------------------------------------------------------+
+| plot_point, plot_line, plot_rectangle, plot_circle, plot_ellipse, plot_shape |
++-----------------------------------------------------------------------------*/
+plot_point   is plot_shape;
+plot_line    is plot_shape;
+plot_arc     is plot_shape;
+plot_circle  is plot_shape;
+plot_ellipse is plot_shape;
+plot_rectangle    is plot_shape;
+plot_label   is plot_shape;
+
+plot_shape is PlotShape;
+
+proc draw_shape
+{
+	para	viewport_name, SegName, entity, attr,
+		xOrigin, yOrigin, xScale, yScale;
+	auto	x1, y1, x2, y2, i, p1, p2;
+
+	if (viewport_name == @ || SegName == @ || idv(entity)) return;
+	switch (entity[1]) {
+	case 'C':
+	    xpoint(viewport_name, SegName,
+		entity[2], entity[3], attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'P':
+	    p1 = polar_to_cart(entity);
+	    xpoint(viewport_name, SegName,
+		p1[2], p1[3], attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'L':
+	    if (entity[2][1] == POLAR) {
+		entity[2] = polar_to_cart(entity[2]);
+	    }
+	    if (entity[3][1] == POLAR) {
+		entity[3] = polar_to_cart(entity[3]);
+	    }
+	    xline(viewport_name, SegName,
+		entity[2][2], entity[2][3], entity[3][2], entity[3][3],
+		attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'G':
+	    xrectangle(viewport_name, SegName,
+		entity[2][2], entity[2][3], entity[3][2], entity[3][3],
+		attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'U':
+	    if (entity[2][1] == POLAR) {
+		entity[2] = polar_to_cart(entity[2]);
+	    }
+	    if (entity[3][1] == POLAR) {
+		entity[3] = polar_to_cart(entity[3]);
+	    }
+	    xarc(viewport_name, SegName,
+		entity[2][2], entity[2][3], entity[3][2], entity[3][3],
+		entity[4], attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'E':
+	    if (entity[2][1] == POLAR) {
+		entity[2] = polar_to_cart(entity[2]);
+	    }
+	    xcircle(viewport_name, SegName,
+		entity[2][2], entity[2][3], entity[3],
+		attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'Q':
+	    if (entity[2][1] == POLAR) {
+			entity[2] = polar_to_cart(entity[2]);
+	    }
+	    if (entity[3][1] == POLAR) {
+			entity[3] = polar_to_cart(entity[3]);
+	    }
+	    if (entity[4][1] == POLAR) {
+			entity[4] = polar_to_cart(entity[4]);
+	    }
+	    xellipse(viewport_name, SegName, entity[2][2], entity[2][3], entity[3][2], entity[3][3], entity[4][2], entity[4][3], attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'T':
+	    if (entity[3][1] == POLAR)
+		entity[3] = polar_to_cart(entity[3]);
+	    xtext(viewport_name, SegName,
+		entity[3][2], entity[3][3], str(entity[2]),
+		attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'I':
+	    if (entity[3][1] == POLAR)
+		entity[3] = polar_to_cart(entity[3]);
+	    ximage(viewport_name, SegName,
+		entity[3][2], entity[3][3], str(entity[2]),
+		attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	case 'S':
+	    for (i = 2; i <= entity#; i++)
+		draw_shape(viewport_name, SegName, entity[i],
+		attr, xOrigin, yOrigin, xScale, yScale);
+	    break;
+
+	default:
+	    writeln("ERROR: draw_shape(" , entity, ");");
+	    break;
+	}
+}
+
+proc dd_delete { para id, viewport, attr;
+	plot_shape([], id, attr);
+	*id = @;
+}
+
+proc InitDoNaLDViewport {
+    OpenDisplay("donaldscreen", 500, 500);
+    tcl("wm title .donaldscreen DoNaLD");
+    execute("%scout\n
+			 window DoNaLDdefaultWin = {
+				type: DONALD
+				pict: \"DoNaLD\"
+				box: [{0,0}, {500, 500}]
+				border: 1
+			 };\n%eden");
+    tcl("canvas .donaldscreen.default");
+
+    if (weden_UsingWebEden == 1) {
+    	weden_SendEDENOutput("<s><item type=\"createcanvas\"><canvas id=\".donaldscreen.default\" type=\"donald\" /></item></s>");		/* [TO_MAKE_WebEdenDecision] */
+    }
+    
+    DoNaLD is scout_show_2D_window(DoNaLDdefaultWin, ".donaldscreen.default", "default") ? [["donaldscreen", "default"]] : [["donaldscreen", "default"]];
+}
+
+/* include(getenv("TKEDEN_LIB") // "/macro.e"); */
+
+proc SetGraph { para ename, dname;
+execute(macro("
+proc P?1 : ?1_viewport, ?1__fi_, ?1__xi_, ?1_nSegment, ?1_?3, ?1_?4 {
+  auto i, j, s, xi, xi_1, fi, fi_1;
+  xi = \"(\"//?1__xi_//\")\";
+  xi_1 = macro(xi, \"??2\");
+  fi = \"(\"//macro(?1__fi_, \"??1\", xi)//\")\";
+  fi_1 = macro(fi, \"??2\");
+  execute(\"%donald\\nviewport \"//?1_viewport//\"\\nwithin ?2 {\\n\");
+  if (o?1_nNode != @)
+  for (j = o?1_nNode[2]; j > 0; j--)
+    for (i = o?1_nNode[1]; i > 0; i--)
+      execute(macro(\"%donald\\ndelete ?3??2_??1\", str(i-1),str(j)));
+  if (o?1_nSegment != @)
+  for (j = o?1_nSegment[2]; j > 0; j--)
+    for (i = o?1_nSegment[1]; i > 0; i--)
+      execute(macro(\"%donald\\ndelete ?4??2_??1\", str(i), str(j)));
+"//"
+  if (?1_?3 != []) {
+    for (j = 0; j < ?1_?3# / 2; j++) {
+      s = \"\";
+      for (i = ?1_nSegment; i >= 0; i--) {
+	s = s // macro(\" ?3??2_??1\", str(i), str(j+1));
+	if (i > 0) s = s // ',';
+      }
+      if (?1_nSegment > 0)
+	execute(\"%donald\\n\"//?1_?3[2*j+1]//s);
+      if (?1_?3[2*j+2] != \"\")
+      for (i = ?1_nSegment; i >= 0; i--)
+	execute(macro(macro(\"%donald\\n?3????3_??1 = \"//?1_?3[2*j+2],
+	\"??1\", xi, fi, \"??2\", xi_1, fi_1), str(i), str(i-1), str(j+1)));
+    }
+    o?1_nNode = [?1_nSegment + 1, ?1_?3# / 2];
+  } else
+    o?1_nNode = [0,0];
+"//"
+  if (?1_?4 != []) {
+    for (j = 0; j < ?1_?4# / 2; j++) {
+      s = \"\";
+      for (i = ?1_nSegment; i > 0; i--) {
+	s = s // macro(\" ?4??2_??1\", str(i), str(j+1));
+	if (i > 1) s = s // ',';
+      }
+      if (?1_nSegment >= 0)
+	execute(\"%donald\\n\"//?1_?4[2*j+1]//s);
+      if (?1_?4[2*j+2] != \"\")
+      for (i = ?1_nSegment; i > 0; i--)
+	execute(macro(macro(\"%donald\\n?4????3_??1 = \"//?1_?4[2*j+2],
+	\"??1\", xi, fi, \"??2\", xi_1, fi_1), str(i), str(i-1), str(j+1)));
+    }
+    o?1_nSegment = [?1_nSegment, ?1_?4# / 2];
+  } else
+    o?1_nSegment = [0,0];
+  execute(\"%donald\\n}\");
+}
+", ename, dname, "node", "segment"));
+}
+
+proc quit {}

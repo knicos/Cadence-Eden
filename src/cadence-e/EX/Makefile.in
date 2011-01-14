@@ -1,0 +1,8 @@
+#
+# $Id: Makefile.in,v 1.13 2001/07/27 16:22:10 cssbz Exp $
+#
+
+SOURCES = ex.c parser.c script.c
+LIB = libex.a
+
+include ../generic.mk

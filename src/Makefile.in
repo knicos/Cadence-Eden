@@ -1,0 +1,39 @@
+SHELL=/bin/sh
+
+CC=@CC@
+CPP=@CXX@
+AR=ar
+CPPFLAGS=@CXXFLAGS@
+LDFLAGS=@LDFLAGS@ -L@prefix@/lib -ltk -ltcl -lGL -L/usr/lib64 -lSM -lICE -lpng -lXt -lX11 -lXmu -lXext  -lcadence -lGL -ldl -lm
+INCLUDES=-I@top_srcdir@/libcadence/include -I@top_builddir@/libcadence/include
+
+SOURCES=eden.cpp
+OBJECTS=$(SOURCES:.cpp=.o)
+LIB=libcadence_eden.so
+EDENOBJS = cadence-e/Eden/libeden.a cadence-e/pcre-3.9/pcre.o
+MISCOBJS = cadence-e/Misc/libmisc.a
+DONALDOBJS = cadence-e/Donald/libdonald.a
+EXOBJS = cadence-e/EX/libex.a
+SCOUTOBJS = cadence-e/Scout/libscout.a
+LSDOBJS = cadence-e/LSD/liblsd.a
+SASAMIOBJS = cadence-e/Sasami/libsasami.a
+
+TKEDENOBJS = $(EDENOBJS) $(MISCOBJS) $(DONALDOBJS) $(SASAMIOBJS) $(EXOBJS) \
+		 $(SCOUTOBJS)
+
+all: $(SOURCES) $(LIB)
+
+$(LIB):: $(OBJECTS)
+	cd cadence-e; make
+	$(CPP) --shared $(LDFLAGS) -o ../$@ $(OBJECTS) $(TKEDENOBJS)
+
+.cpp.o:
+	$(CPP) -fPIC -c $(CPPFLAGS) $(INCLUDES) $< -o $@
+
+clean::
+	rm -f *.o
+	cd cadence-e; make clean
+
+install::
+	cd cadence-e; make install
+

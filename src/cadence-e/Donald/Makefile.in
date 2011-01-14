@@ -1,0 +1,18 @@
+#
+# $Id: Makefile.in,v 1.13 2001/07/27 16:22:10 cssbz Exp $
+#
+
+# Need to find the original lexer source... where oh where?
+LEXER_SOURCE = lex.c
+
+NOTATION_PREFIX = dd_
+
+PARSER_SOURCE = parser.y
+PARSER_OUT = parser.c
+PARSER_HEADERS_OUT = parser.h
+
+SOURCES = check.c symbol.c tree.c utility.c
+
+LIB = libdonald.a
+
+include ../generic.mk

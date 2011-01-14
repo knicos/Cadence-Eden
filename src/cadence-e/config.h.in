@@ -1,0 +1,103 @@
+/*
+ * $Id: config.h.in,v 1.6 2001/12/06 22:21:43 cssbz Exp $
+ */
+
+/* Define if using alloca.c.  */
+#undef C_ALLOCA
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define to one of _getb67, GETB67, getb67 for Cray-2 and Cray-YMP systems.
+   This function is required for alloca.c support on those systems.  */
+#undef CRAY_STACKSEG_END
+
+/* Define if you have alloca, as a function or macro.  */
+#undef HAVE_ALLOCA
+
+/* Define if you have <alloca.h> and it should be used (not on Ultrix).  */
+#undef HAVE_ALLOCA_H
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at run-time.
+ STACK_DIRECTION > 0 => grows toward higher addresses
+ STACK_DIRECTION < 0 => grows toward lower addresses
+ STACK_DIRECTION = 0 => direction of growth unknown
+ */
+#undef STACK_DIRECTION
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+#undef TIME_WITH_SYS_TIME
+
+/* Define if your <sys/time.h> declares struct tm.  */
+#undef TM_IN_SYS_TIME
+
+/* Define if the X Window System is missing or not being used.  */
+#undef X_DISPLAY_MISSING
+
+/* Define if you have the dl library (-ldl).  */
+#undef HAVE_LIBDL
+
+/* Define if you have the m library (-lm).  */
+#undef HAVE_LIBM
+
+/* Define if your C compiler has protos */
+#undef CC_HAS_PROTOS
+
+/* Define if you want to enable debugging */
+#undef DEBUG
+
+/* Define to be (in bytes) to what boundary doubles should be aligned */
+#undef DOUBLE_ALIGNMENT
+
+/* Define if you have the curses library */
+#undef HAVE_CURSES
+
+/* Define if you have the ncurses library */
+#undef HAVE_NCURSES
+
+/* Define if you want to use the dcc function for disabling
+   circular checking */
+#undef NO_CHECK_CIRCULAR
+
+/* Define to be something resembling the type of the system to enable
+   configure to stop cached results being used on the wrong system */
+#undef SYSTEM_NAME
+
+/* Define if you want to enable eden parser debugging */
+#undef YYDEBUG
+
+/* Define if you have the dmalloc library (-ldmalloc) */
+#undef HAVE_DMALLOC
+
+/* Define if you have the GNU readline library (-lreadline) */
+#undef HAVE_READLINE
+
+/* Define if you want the Sasami facilities (a notation using OpenGL
+   graphics) to be included */
+#undef WANT_SASAMI
+
+/* Define if your version of Tcl has Tcl_EvalEX */
+#undef HAVE_TCL_EVALEX
+
+/* Define if you want to use Eden's IPC functions (send_msg...) */
+#undef ipc
+
+/* Define if you have the libgen.h header (for dirname and basename) */
+#undef HAVE_LIBGEN_H
+
+/* Define if you have the unistd.h header */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the limits.h header */
+#undef HAVE_LIMITS_H
+
+/* Define if you want to run WEDEN */
+#undef WEDEN_ENABLED
+
+/* Define if you want to use TCL CONST84 to prevent Tcl_CreateCommand issues */
+#undef USE_TCL_CONST84_OPTION

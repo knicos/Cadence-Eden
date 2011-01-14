@@ -1,0 +1,491 @@
+---------- EDEN (Evaluator of DEfinitive Notations) QUICK REFERENCE ----------
+
+Parts of syntax which are !@Ooptional are shown like this!@P
+
+
+CONTENTS OF THIS QUICK REFERENCE:
+
+1. C-like syntax
+2. Data types
+3. Operators
+4. Procedural statements
+5. User-defined functions, procedures, actions...
+6. Pre-defined variables
+7. Pre-defined functions and procedures
+8. C-library functions and procedures
+9. More information
+
+
+-- 1. C-LIKE SYNTAX ----------------------------------------------------------
+
+Statements are followed by the semi-colon;
+
+/* Multi-line C-style comments /* ...although note they may nest in Eden */ */
+## one-line comments start with two hash characters
+
+Assignment: v = 1;
+Definition: a is f(b, c);
+
+Function: func square { return $1*$1; }
+Procedure: proc inc_a { a++; }
+Action: proc print : q { writeln("q is ", q); }
+
+Name space: can access Scout variables directly.
+            to access Donald variables, prepend an underscore _
+
+Variable declaration is not required or possible.
+Redeclaration of type is automatic.
+
+
+-- 2. DATA TYPES -------------------------------------------------------------
+
+Undefined: @
+Integer: 123, 018 (octal), 0xAB (hex)
+Character: 'A', '\n', '\009'
+Floating point: 1.23e-15
+
+String: s = "this is a string"
+s[1] is the first character of the string s.
+
+Pointer: ip = &int_variable
+* dereferences a pointer: *ip == int_variable
+
+List: L = [ 100, 'a', "string", [1,2,3] ]
+L[1] is the first item of L.
+L[4][2] is the second item in the fourth item of L.
+L# is the length of list L.
+L // M is the concatenation of L and M.
+See also append, insert, delete and shift.
+
+
+-- 3. OPERATORS --------------------------------------------------------------
+
+Strict: Returns @ if an operand is @
+Lazy: Leaves the second operand unevaluated if it is unnecessary
+Eager: Always evaluates both operands
+
+Arithmetic (strict): + - (difference and unary) * / % (remainder)
+
+Relational: < > <= >=
+
+Equality: == !=
+
+Logical (lazy): && || !
+Logical (eager): and or not
+Bitwise (eager): bitand bitor
+
+Conditional: cond ? iftrue : iffalseor@
+
+Assignment: = += -=
+Prefix assignment: ++lvalue --lvalue
+Postfix assignment: lvalue++ lvalue--
+
+Indirection: a=1; r="a"; v=`r`;  Now v == 1 (note: there are problems with
+  use of indirection on the RHS of a definition).
+
+Type casting is implemented through functions: see int(), char() etc below.
+
+
+-- 4. PROCEDURAL STATEMENTS --------------------------------------------------
+
+Compound statements: { statement; !@Ostatements...!@P }
+
+insert list, position, value;  (note: - no brackets - these are not functions
+append list, value;                   - they operate only only lists, not
+delete list, position;                  strings)
+shift !@Olist!@P; (shift with no argument deletes the first item from $)
+
+if (expression) statement !@Oelse statement!@P
+
+while (expression) statement
+
+do statement while (expression);
+
+for (!@Oinitialisation!@P; !@Opre-iteration-test!@P; !@Opost-statement!@P) statement
+
+switch (expression) { case constant: statement; !@Odefault statement;!@P }
+
+break; causes termination of the smallest enclosing while, do, for, switch
+
+continue; causes continuation of smallest enclosing while, do, for
+
+return !@Oexpression!@P;
+
+Null statement: ;
+
+Dependency link: identifier ~> [ !@Oidentifier_list!@P ];
+
+Query: ?lvalue;
+
+Value freezing: eval(sym): takes the value of sym at definition entry time
+  (note this is at proc definition time if eval is used within a proc).
+
+
+-- 5. USER-DEFINED FUNCTIONS, PROCEDURES, ACTIONS... -------------------------
+
+func identifier { !@Opara id_list;!@P !@Oauto id_list;!@P !@Ostatements...!@P }
+proc identifier !@O: id_list!@P { !@Opara id_list;!@P !@Oauto id_list;!@P !@Ostatements...!@P }
+procmacro identifier { !@Opara id_list;!@P !@Oauto id_list;!@P !@Ostatements...!@P }
+
+$ is the argument list of a function.
+$3 is the third argument.
+$[n] is the n-th argument.
+
+Function call: four = square(2);
+
+
+-- 6. PRE-DEFINED VARIABLES --------------------------------------------------
+
+stdin: standard input.
+stdout: standard output.
+stderr: standard error.
+
+autocalc: whether Eden automatically recalculates formula definitions.
+
+tkeden_vbfeatures: whether to implement "VB-like features" in Scout (eg
+  mouseClick observables).  These features are not recommended for use in
+  new models.
+  
+tkeden_textsize: an integer that controls the point size of the text in 
+the input window and other parts of the interface (defaults to 10).
+
+eden_notice_undef_reference: whether to give notices about references to
+  undefined values.
+
+eden_error_index_range: whether to generate an error or @ when referencing
+  outside an array.
+
+_tkeden_showxoutput: whether to show info sent to Tcl for debugging
+  purposes (see also debug(128)).
+eden_debug_notations: whether the notation-handling Eden code should give
+  debugging output
+eden_debug_edenclocks: whether the edenclocks Eden code should give
+  debugging output
+
+PI: ratio of circle circumference to diameter (note lower case pi in DoNaLD).
+
+edenclocks: list of tuples describing integer variables that should be
+  automatically incremented at a given time interval.  Each element in
+  the edenclocks list is itself a list, in the form [clockPtr, millis].
+  'clockPtr' should be a pointer to an integer variable which will then 
+  be incremented every 'millis' milliseconds.  There are two possible
+  special values for 'millis':
+    @ - "pause" this clock: don't increment.  Enables a record of a clock
+          variable to be left in the edenclocks list but temporarily
+          disabled.
+    0 - increment this clock as fast as possible.  This enables the commonly
+          used pattern 'proc p { foo(); todo("p();"); }' to become
+          'proc p : tick { foo(); }; setedenclock(&tick, 0);'.
+  Eg: 'edenclocks=[[&a, 1000], [&b, 2500], [&tick, 0]];' causes 'a' to be
+  incremented once per second, 'b' to be incremented every 2.5 seconds, and
+  'tick' to be incremented as fast as possible.  The edenclocks list can be
+  changed manually or by using the setedenclock and removeedenclock helper
+  procs provided.
+
+
+-- 7. PRE-DEFINED FUNCTIONS AND PROCEDURES -----------------------------------
+
+write(args...): print arguments on stdout.
+writeln(args...): print arguments on stdout, appending a newline (\n).
+
+type(data): returns the type of data as a string: one of "@", "int",
+  "char", "string", "float", "list", "func", "proc", "procmacro",
+  "builtin", "C-func", "Real-func".
+int(data): returns data after cast to integer type.
+char(data): returns data after cast to character type.
+str(data): returns data after cast to character type.
+float(data): returns data after cast to floating point type.
+
+substr(string, from, to): returns a substring of string.
+strcat(strings...): returns the string concatenation of its arguments.
+nameof(pointer): returns the name of the symbol to which the pointer points.
+
+sublist(list, from, to): returns a sublist of list.
+listcat(lists...): returns the list concatenation of its arguments.
+array(size, data): returns a list constructed from data items, of length size.
+
+time(): returns the current time in seconds since Jan 1, 1970.
+ftime(): returns the current time in [second, milli] form.
+gettime(): returns the current time in
+  [second, minute, hour, day of month, month of year, year, day of week] form.
+
+apply(function, list): calls function with list as argument.
+execute(string): executes string as Eden statements.
+todo(string): will execute string as Eden statements after current
+  evaluation terminates.  Consider using a solution using edenclocks instead.
+include(string!@O, string...!@P): executes the contents of the named file(s) as
+  Eden statements.
+cd(string): changes the current working directory.
+cwd(): returns the current working directory.
+dirname(string): returns the containing directory of a given filepath.
+basename(string): returns the filename (leafname) of a given filepath.
+exit(status): terminates the program, returning status as exit status.
+forget(string): attempts to remove the named variable from the symbol
+  table.  Returns 0 for OK, 1 for not found, 2 for failure.
+forget(pointer): attempts to remove the pointed-to variable from the symbol
+  table.  Returns 0 for OK, 2 for failure (1 is not possible).
+eager(): evaluate all out of date formula variables and actions now, update
+  the screen, whatever the state of autocalc.
+touch(pointers...): put the targets of the pointed to variables on the
+  evaluation queue.
+formula_list(): returns list of pointers to queued formula variables.
+action_list(): returns list of pointers to queued actions.
+symboltable(): returns the current symbol table as a list of lists.
+symbols(string): returns a list of symbols from the symbol table which are
+  of the specified type ("@", "int", "char", "string", "float", "list",
+  "var", "formula", "proc", "procmacro", "func", "builtin", "Real-func",
+  "C-func" or "any").
+symboldetail(string): returns a list of information about the named symbol:
+  [name, type, text, targets, sources, master]
+  type is one of "var", "formula", "proc", "procmacro", "func", "builtin",
+    "Real-func", "C-func".
+symboldetail(pointer): returns a list of information about the named symbol.
+symboltext(string): returns the original text used when defining a symbol.
+symboltext(pointer): returns the original text used when defining a symbol.
+symboldefinition(string): returns a symbol in Eden-interpretable form.
+symboldefinition(pointer): returns a symbol in Eden-interpretable form.
+
+getenv(env): returns the string contents of the environment variable env.
+putenv(env): set environment variable: env should have the form "name=value".
+error(message): generate an Eden error.
+error_no(): returns the last system (not Eden) error number.
+backgnd(path, cmd, arg1, arg2...): executes a process in the background.
+pipe(path, cmd, arg1, arg2...): pipes stdout to the process given by path.
+get_msgq(key flag): gets a message queue.
+remove_msgq(msgqid): removes a message from the message queue msgqid.
+send_msg(msgid, [msg_type, msg_text], flag): send a message on a message queue.
+receive_msg(msgqid, msg_type, flag): receive a message from a message queue.
+
+installAOP(notation, agentname): install a new Agent-Oriented Parser
+  notation.  notation string must include the initial % character.  This
+  function replaces the old "notation" built-in: replace notation("eddi",
+  "eddi_notation"); with installAOP("%eddi", "eddi_notation");
+
+newNotation(name, switchProcPtr, transProcPtr): install a new notation.
+
+installIPTrans(name, path): install a new Interactive Process -based
+  translator.
+
+removeNotationRadioButton(notation): removes a notation radio button from
+  the tkeden interface.  Pass the name of a notation, including the initial
+  % character.
+
+installeddi(): install the EDDI notation.
+installarca(): install the ARCA notation.
+installdenota(): install the DENOTA notation.
+installedensl(): install the EdenSL notation.
+installangel(): install the GEL notation.
+
+macro(s, para1, para2, ..., paraN): substitute ?1 in s with para1, ?2 with
+  para2 etc and return the result.
+copyproc(oldname, newname): copy a proc to a new name.
+showpara(procname, showret): adjust the definition of a proc so that, when
+  called, the parameters and, optionally, return result are printed.
+  (Superseded for most purposes by debug(512)).
+round(r): make a real value into an integer with rounding.
+
+max(number, ...) or max([list of numbers]) : returns the maximum of the 
+  numbers.
+min(number, ...) or min([list of numbers]) : returns the minimum of the 
+  numbers.
+sum(number, ...) or sum([list of numbers]) : returns the sum of the numbers.
+abs(number) : returns number if > 0, otherwise returns -number (e.g abs(-7)=7).
+average(number, ...) or average([list of numbers]) : returns the average of 
+  the numbers.
+nthroot(number, n) : returns the n'th root of the number given.
+factorial(number) : returns the factorial of the number given.
+product(number, ... ) : returns the numbers passed multiplied together.
+sign(number) : returns -1 if number is < 0, 0 if number = 0, 1 if number > 0.
+even(number) : returns the nearest even number to the number given.
+odd(number) : returns the nearest odd number to the number given.
+mround(number, multiple) : returns the number rounded to the nearest multiple
+  of the given multiple (e.g mround(62,6)=60).
+sumsq(number, .. ) or sumsq([list of numbers]) : returns the sum of the 
+  squares of the numbers passed.
+trunc(number) : returns the integer part of the number given.
+combin(total, n) : returns the number of ways n numbers can be picked from 
+  total number of items.
+ceiling(number, multiple) : returns the number rounded to the nearest multiple
+  of the given multiple that is greater than the number.
+floor(number, multiple) : returns the number rounded to the nearest
+  multiple of the given multiple that is lower than the number.
+degrees(angle) : returns an angle given in radians with its equivalent in 
+  degrees in a range 0-360.
+radians(angle) : returns an angle given in degrees with its equivalent in 
+  radians in a range 0-2*PI.
+rounddigits(number, digits) : returns the number rounded to the specified 
+  number of digits (e.g rounddigits(123.45,2)=120).
+gcd(number, ...) or gcd([list of numbers]) : returns the largest number which 
+  will divide exactly into all the numbers passed.
+lcm(number, ...) or lcm([list of numbers]) : returns the smallest number that
+  all the numbers passed will divide exactly into it.
+variance(number, ...) or variance([list of numbers]) : returns the variance of
+  the numbers passed or the list of numbers passed to it.
+stdev(number, ...) or stdev([list of numbers]) : returns the standard 
+  deviation of the numbers passed or the list of numbers passed to it.
+sort([list of numbers], direction) : returns the list of numbers sorted. the 
+  direction parameter should be 1 to return an ascending list, 2 to return a 
+  descending list.
+median([list of numbers]) : returns the median element of a list of elements,
+  those elements do not need to be in any sorted order.
+
+randomise() : seeds the random number generator with a random number.
+rnd(number) : returns a random number between 0 and the number. Note
+  that both 0 and number are included in the range.
+realrand() : returns a real random number between 0.0 and 1.0, including 0
+  but excluding 1.
+
+rgb2color(r, g, b): takes values in range 0-255 and returns a colour
+  reference (which should be treated as opaque) to be used in SCOUT/DoNaLD.
+rgb2colour(r, g, b): same as rgb2color.
+
+ipopen(path, cmd, arg1, arg2...): creates a concurrent interactive process,
+  returning a list [rfd, wfd, efd] of stdin, stdout, stderr file descriptors.
+ipclose([rfd, wfd, efd]): terminates the process created with ipopen.
+fdready(fd, type, [sec, milli]): returns non-zero if the file descriptor
+  can be read from, written to, or has an exception, depending on the
+  second argument, which should be 'r', 'w' or 'e'.  Will block for the
+  time stated in third argument (which can be zero), or indefinately until
+  the necessary condition is achieved if the third argument is @.
+rawread(fd, maxbytes): returns a string, maximum maxbytes long, read from
+  the file descriptor fd, with no file buffering.
+rawwrite(fd, string): writes string to the file descriptor, with no file
+  buffering.
+
+regmatch(pattern, subject): returns a list of subpatterns in the first
+  match found by the (Perl-compatible) regular expression pattern in
+  subject.  The first subpattern is the entire match.
+regreplace(pattern, replacement, subject!@O, limit!@P): replaces the matches
+  found by pattern in subject with replacement.  The optional limit
+  sets the number of replacements that are made.  replacement can
+  contain references to parenthesised subpatterns in pattern, in the
+  form "$n" (0<=n<=99).  A literal $ can be achieved by escaping it:
+  "\\$" (note the need to escape the backslash in an Eden string).
+
+usbhidopen(filename): opens a file (eg /dev/input/event0) as a Universal
+  Serial Bus Human Input Device (eg a joystick or steering wheel),
+  returning the fileid.  Available on Linux only at present.
+usbhidread(fileid): returns a packet of information read from the device in
+  the form [time, type, code, value].  time is returned in the same form as
+  the ftime() routine.  If there were no packets to read, empty list is
+  returned.
+usbhidclose(fileid): closes the fileid.
+
+rawserialopen(filename): opens a file (eg /dev/ttyS0) and sets it in raw
+  mode, returning the fileid.  This is intended to be used for communication
+  with hardware.  Use with rawwrite() and rawserialread().  Available on Linux
+  only at present.
+rawserialread(fd, maxbytes): returns a string, maximum maxbytes long, read
+  from the file descriptor fd, with no file buffering.
+rawserialclose(fileid): closes the fileid.
+
+inpdevlineno(): returns an integer -- the current line number in the
+  Eden (or other?) code.
+inpdevname(): returns a string -- the name of the current input device.
+  (NB: for the above, use eg eval(inpdevlineno()) to evaluate and obtain
+   values from parse time rather than run time.)
+
+debug(status): sets the interpreter debugging mode.  Add these values to
+  form the parameter:
+    1:  various
+    2:  RunSet (inc todo()) debugging
+    4:  Eden parser debugging (=yydebug)
+    8:  Sasami
+    16: Donald
+    32: Scout parser debugging (=st_debug)
+    64: malloc debugging (emalloc macro)
+    128: Tcl_Eval debugging
+    256: execute debugging
+    512: func / proc / procmacro call debugging
+    1024: VMWRIT debugging (in 1 also)
+    2048: Donald parser debugging (=dd_debug)
+    4096: Print errors on stderr as well as the error window.
+    8192: regular expression debugging
+    16384: notation debugging
+    32768: timers C code debugging
+
+trace(): prints a stack trace of proc/func calls made on stderr.
+
+pack(data...): stores data in a newly allocated memory space on the heap.
+
+createtimer(cmdstring, millis): adds cmdstring to the todo() queue in
+  'millis' milliseconds (which must be an integer >= 1).  The timing of
+  this event is only approximate and may be more (or less...?!) than
+  specified.  Returns a token which can be passed to
+  deletetcltimerhandler().  This is a relatively low- level function:
+  recommend you write procedures triggered by 'edenclock' variables
+  instead if possible (see 'edenclocks' variable and 'setedenclock' and
+  other helper procedures).
+deletetimer(token): must be passed a token previously returned from
+  createtcltimerhandler.  Stops the particular timer from activating.
+deletealltimers(): stops all timers from activating.
+
+setedenclock(clockPtr, millis): cause the integer variable pointed to by
+  clockPtr to increment every 'millis' milliseconds.  For details of '@'
+  and '0' special cases for 'millis', see description of 'edenclocks' list.
+  Eg: 'setedenclock(&a, 1000);' causes variable 'a' to increment every sec.
+removeedenclock(clockPtr): removes edenclock variable from edenclocks list.
+pauseedenclocks(): temporarily pause all edenclocks.
+unpauseedenclocks(): continue after having paused edenclocks.  (Note that
+  each clock will be restarted at roughly the same instant so the phase
+  relationships between each will not be the same as before the pause.)
+
+edeninterruptedhook(): define this procedure to cause statements to happen
+  after the Interrupt button / ctrl-c are pressed.
+
+
+... there may be more built-in functions and procedures, depending upon the
+Eden variant you are using.
+
+
+-- 8. C-LIBRARY FUNCTIONS AND PROCEDURES -------------------------------------
+(see their man pages for more detail)
+
+fopen(filename, mode): opens a file, returning the fileid or 0 on error.
+fclose(fileid): closes a file stream.
+
+fgetc(fileid): gets and returns a character from a file stream.
+fgets(n, fileid): returns a string (max n characters) read from a file stream
+  and @ when end of file has been reached.
+fscanf(fileid, format, &out1, &out2...): formatted read from the input stream.
+gets(): returns a string read from stdin.
+ungetc(c, fileid): pushes the character back onto the input stream fileid.
+
+fprintf(fileid, format, args...): prints a formatted string to a file stream.
+fputc(char, fileid): prints a character to a file stream.
+
+pclose(fileid): close a pipe.
+popen(command, mode): open a pipe, returning fileid.
+putw(w, fileid): puts a machine word to a file stream.
+setbuf(fileid, buf): set the buffer to use for a file - if buf is 0, the file
+  is unbuffered.
+
+sprintf(&s, format, args...): formatted print to a string (warning: s must
+  first be initialised to a string of appropriate length).
+sscanf(&s, format, &out1, &out2...): formatted read from string s.
+
+system(string): execute command in a sub-shell.
+stat(filename): returns a list of information about the named file:
+  UID, GID, size, times of last access, data modification, file status change.
+srand(seed): seed the random number generator.
+rand(): return a random number (range is system dependent).
+
+sin(float): returns the sine of its (radians) argument.
+cos(float): returns the cosine of its (radians) argument.
+tan(float): returns the tangent of its (radians) argument.
+asin(float): returns the principle arcsine of its (radians) argument.
+acos(float): returns the principle arccosine of its (radians) argument.
+atan(float): returns the principle arctangent of its (radians) argument.
+atan2(y, x): returns the principle value of the arctangent of y/x (floats).
+sqrt(float): returns the square root of its argument.
+pow(x, y): returns the value of x raised to the power y (floats).
+log(float): returns the natural logarithm of its argument (which must be +ve).
+log10(float): returns the logarithm to base 10 of its argument.
+exp(float): returns the exponential (pow(e,x)) of its argument.
+... the above always return a float, even if all arguments are ints
+
+
+-- 9. MORE INFORMATION -------------------------------------------------------
+
+See the full manual available at http://go.warwick.ac.uk/EDEN/ for
+more detail.

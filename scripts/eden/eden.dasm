@@ -1,0 +1,8 @@
+.modules eden = (new type=Module
+	file = (new type=LocalFile
+		filename = "libcadence_eden.so"
+	)
+	base = (.)
+	update = true
+	frequency = 0.00
+); 

@@ -1,0 +1,202 @@
+------------------ SCOUT (SCreen layOUT) QUICK REFERENCE ---------------------
+
+Warning: this documentation isn't quite finished yet...
+
+
+CONTENTS OF THIS QUICK REFERENCE:
+
+1. Syntax
+2. Data types
+3. Window attributes
+4. Sensitive
+5. Functions
+6. Examples
+7. More information
+
+
+-- 1. SYNTAX -----------------------------------------------------------------
+
+Definitions are followed by the semi-colon;
+
+Attributes within a window field list can be separated by white space or
+commas or both (note the last item must not be followed by a comma).
+
+# UNIX shell style one-line comments
+
+Variables must be declared before use (even ones that already exist in Eden)
+Redeclaration of type is not possible
+
+Name space: can access Eden variables directly.
+
+
+
+-- 2. DATA TYPES -------------------------------------------------------------
+
+string: "guides and scouts"
+integer: 123
+real: 123.4
+point: {10, 20}, or box . nw, or...
+box: [{10, 20}, point2], or [[{10, 20}, height, width], or...
+frame: (box1, [p1, {30, 1}], box42)
+window: {type: DONALD, box: b, pict: "FIGURE1" border:5}
+display: < window1 / donald2 >
+
+
+-- 3. WINDOW ATTRIBUTES-------------------------------------------------------
+
+type: TEXT, DONALD, ARCA, IMAGE or TEXTBOX
+
+frame: a frame: a list of boxes which the text will flow through        (TEXT,TEXTBOX)
+box: a box: the geometry                        (DONALD, ARCA, IMAGE)
+
+string: a string: the contents                                 (TEXT, TEXTBOX)
+pict: a string: the picture used                         (DONALD, ARCA, IMAGE)
+
+xmin, ymin, xmax, ymax: an integer: drawing coordinate system         (DONALD)
+font: a string: "{family size style}"...                       (TEXT, TEXTBOX)
+  family = times, courier or helvetica,
+  size = in points (1/72th inch)
+  style = normal, bold, roman, italic, underline, overstrike
+    (multiple styles are possible: "{times 12 {bold italic}}")
+alignment: NOADJ, LEFT, RIGHT, EXPAND or CENTRE                (TEXT, TEXTBOX)
+bgcolour or bgcolor: a string                                      (all types)
+fgcolour or fgcolor: a string                                      (all types)
+bdcolour or bdcolor or bordercolor or bordercolour: a string       (all types)
+border: an integer                                                 (all types)
+relief: a string ("raised", "sunken", "flat", "ridge" or "groove") (all types)
+sensitive: ON, OFF, MOTION, ENTER, LEAVE or a sum of these         (all types)
+
+
+-- 4. SENSITIVE --------------------------------------------------------------
+
+OFF: user actions inside window cause no redefinition
+
+ON: mouse actions inside window cause redefinition:
+      windowname_mouse = {button, type, state, x, y}           (DONALD, IMAGE)
+      windowname_mouse_boxnumber = {button, type, state, x, y}          (TEXT)
+
+	button: button number,
+	type: 4=pressed, 5=released,
+	state: shift +1, capslock +2, control +4, meta +8, was-pressed +256
+	x, y: mouse coordinates (in the window's coordinate system)
+
+    key strokes inside window cause redefinition:
+      windowname_key = {key, type, state, x, y}                (DONALD, IMAGE)
+      windowname_key_boxnumber = {key, type, state, x, y}               (TEXT)
+
+	key: ascii code of key pressed
+	type, state, x, y: as above
+
+MOTION: mouse motion inside window causes redefinition
+      windowname_mousePos = {x, y}                             (DONALD, IMAGE)
+      windowname_mousePos_boxnumber = {x, y}                            (TEXT)
+
+ENTER: mouse motion into the window causes redefinition
+      windowname_mouseEnter = 1;                               (DONALD, IMAGE)
+      windowname_mouseEnter_boxnumber = 1;                              (TEXT)
+
+LEAVE: mouse motion out of the window causes redefinition
+      windowname_mouseLeave = 1;                               (DONALD, IMAGE)
+      windowname_mouseLeave_boxnumber = 1;                              (TEXT)
+
+
+-- 5. FUNCTIONS --------------------------------------------------------------
+
+ImageFile(type, filename)
+  type can be ppm, pgm or gif.  If the Tk Img package is installed (see
+  Help -> About tkeden to check), bmp, xbm, xpm, gif (with transparency),
+  png, jpeg, tiff and postscript are also available.
+
+ImageScale(source, xscale, yscale)
+if condition then expression1 else expression2 endif
+strcat(string, string)
+substr(string, integer, integer)
+itos(integer)
+strlen(string)
+shift(box, integer, integer)
+intersect(box, box)
+centre(box, box)
+enclose(box, box)
+reduce(box, box)
+
+?
+append(frame, integer, box)
+insert(list, position, expression)
+delete(list, position)
+delete(frame, integer)
+
+-- 6. TEXTBOXES -------------------------------------------------------------
+
+To get/set the text from a TEXTBOX (text input box)
+use the following eden functions (substitute 
+"WindowName" for the name of the particular TEXTBOX).
+
+%eden
+WindowName_getText();
+WindowName_setText(string);
+
+
+-- 7. EXAMPLES ---------------------------------------------------------------
+
+%scout
+window ash = {
+  type: TEXT
+  string: "Ash"
+  frame: ([{10, 10}, {100, 100}])
+  sensitive: MOTION
+};
+screen = < ash >;
+
+...
+
+%scout
+image source = ImageFile("png", "aphasia.png");
+window firstImage = {
+  type: IMAGE
+  box: [{10,10}, {490,240}]
+  pict: "source"
+  border: 5
+  relief: "raise"
+};
+screen = < firstImage >;
+
+...
+
+%scout
+window donpic = {
+  type: DONALD
+  box: [{10, 10}, {200, 200}]
+  pict: "stickman"
+  border: 2
+  xmin: -30
+};
+screen = < donpic / ash >;
+
+...
+
+%scout
+window input = {
+  type: TEXTBOX
+  frame: ([{10,10},{20,1}])
+  sensitive: ON
+  string: "hello"
+  border: 1
+  font: "{courier 10 normal}"
+  bgcolour: "white"
+  bdcolour: "black"
+  relief: "sunken"
+};
+screen=<input>;
+%eden
+input_setText("Type here");
+...
+
+ need more examples...
+
+
+
+
+
+-- 7. MORE INFORMATION -------------------------------------------------------
+
+See http://go.warwick.ac.uk/EDEN/ for more detail.

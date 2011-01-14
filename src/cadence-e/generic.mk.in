@@ -1,0 +1,106 @@
+# (Note generic.mk is generated automatically from generic.mk.in by configure)
+
+#
+# $Id: generic.mk.in,v 1.2 2002/02/27 16:30:25 cssbz Exp $
+#
+
+# This Makefile snippet is included from other Makefiles, one for almost each
+# subdirectory in the distribution.
+
+SHELL=/bin/sh
+
+AR			= ar
+ARFLAGS			= cq
+INSTALL			= install
+CC			= @CC@
+CPP			= @CPP@
+CONF_CFLAGS		= @CFLAGS@
+CPPFLAGS		= @CPPFLAGS@
+DEFS			= @DEFS@
+X_CFLAGS		= @X_CFLAGS@
+RANLIB			= @RANLIB@
+BISON			= @BISON@
+
+AW_X_LIBS		= @AW_X_LIBS@
+CURSES_TYPE		= @CURSES_TYPE@
+CURSES_INCLUDE		= @CURSES_INCLUDE@
+CURSES_LIB_PATH		= @CURSES_LIB_PATH@
+TCL_INCLUDE		= @TCL_INCLUDE@
+TK_INCLUDE		= @TK_INCLUDE@
+DMALLOC_INCLUDE		= @DMALLOC_INCLUDE@
+READLINE_INCLUDE	= @READLINE_INCLUDE@
+OPENGL_INCLUDE		= @OPENGL_INCLUDE@
+PNG_INCLUDE		= @PNG_INCLUDE@
+
+# Explicitly set the SUFFIXES list in case it already has a silly setting
+.SUFFIXES:
+.SUFFIXES: .c .o
+
+# Implicit rule to make .o files from .c files
+.c.o:
+	$(CC) -c -fPIC $(CPPFLAGS) $(ALLCFLAGS) $< -o $@
+
+# CFLAGS should go at the end here, so the user is free to define
+# CFLAGS and override any of our settings
+ALLCFLAGS = -g -D$(VARIANT) \
+		$(CURSES_INCLUDE) $(TCL_INCLUDE) $(TK_INCLUDE) $(DMALLOC_INCLUDE) \
+		$(READLINE_INCLUDE) $(OPENGL_INCLUDE) $(PNG_INCLUDE) \
+		$(DEFS) $(X_CFLAGS) $(CONF_CFLAGS) $(CFLAGS)
+
+PARSER_SKEL = ../bison/bison.simple
+
+PARSER_OBJ = $(PARSER_OUT:.c=.o)
+
+LEXER_OUT = $(NOTATION_PREFIX)$(LEXER_SOURCE)
+
+SOURCES += $(PARSER_OUT) $(LEXER_OUT)
+
+OBJS = $(SOURCES:.c=.o)
+
+# This is used in depends.mk and in the clean targets below
+DEPENDS = $(SOURCES:.c=.d)
+
+default:	$(LIB)
+
+$(LIB):		$(OBJS)
+		-rm -f $@
+		$(AR) $(ARFLAGS) $@ $(OBJS)
+		$(RANLIB) $@
+
+# We definately have to use bison, not yacc, as we use BISON_SIMPLE
+# Make bison use st as the output prefix to avoid clashing with the
+# other parsers. --name-prefix doesn't seem to work on ARMLinux, using
+# -p instead.  If NOTATION_PREFIX is blank, don't do the -p option.
+$(PARSER_OUT):	$(PARSER_SOURCE) $(PARSER_SKEL)
+		if test -z "$(NOTATION_PREFIX)"; \
+		then BISON_SIMPLE=$(PARSER_SKEL) \
+			$(BISON) -v --defines -o $@ $(PARSER_SOURCE); \
+		else BISON_SIMPLE=$(PARSER_SKEL) \
+			$(BISON) -v -p $(NOTATION_PREFIX) \
+			--defines -o $@ $(PARSER_SOURCE); fi
+
+# Bison's -p fails to translate the yyrestart name, so do it here...
+$(PARSER_OBJ):	$(PARSER_OUT)
+		$(CC) -fPIC -c $(CPPFLAGS) $(ALLCFLAGS) \
+			-Dyyrestart=$(NOTATION_PREFIX)restart $(PARSER_OUT) \
+			 -o $@
+
+# Make the generated sources
+generate:	$(PARSER_OUT) $(LEXER_OUT)
+
+$(LEXER_OUT):	$(LEXER_SOURCE)
+		sed -e 's/yy/$(NOTATION_PREFIX)/g' \
+			-e 's/YY/Y$(NOTATION_PREFIX)/g' \
+			$(LEXER_SOURCE) > $(LEXER_OUT)
+
+clean:
+		-rm $(LIB) $(OBJS)
+
+# Even remove the generated sources
+reallyclean:
+		-rm $(LIB) $(OBJS) $(PARSER_OUT) $(PARSER_HEADERS_OUT) \
+			$(LEXER_OUT) $(DEPENDS)
+
+# Include a Makefile giving instructions about dependencies if enabled by
+# passing --enable-depend to ./configure
+@DEPEND_MAKEDEFS@

@@ -1,0 +1,1405 @@
+/*
+ * Ant's AOP (v2.11)
+ * (integrated with tkeden)
+ */
+
+/* action.e [18/11/2002][Ant] */
+
+func aop_action {
+  para script, instr, token_matched, child_substrs, passed_var, instr_var;
+  auto i, child_params, formatted_str, script_later;
+  
+  script_later = [];
+  
+  ##check that script is a list
+  if (type(script) != "list")
+    return ERROR;
+  
+  ##create child variables/parameters
+  child_params = [];
+  for (i = 1; i <= child_substrs#; i++)
+    append child_params, makevarname();
+  
+  ##process script
+  for (i = 1; i <= script#; i++) {
+    
+    ##check that script[i] is a tuple
+    if (!(type(script[i]) == "list" && script[i]# >= 2))
+      return ERROR;
+    
+    ##format the script action string
+    formatted_str = aop_action_format(script[i][2], instr, token_matched,
+      child_substrs, passed_var, instr_var, child_params);
+    
+    switch (script[i][1]) {
+      case "now":
+        aop_action_execute(formatted_str);
+        break;
+      case "later":
+        ##store script action in a list to be processed later
+        append script_later, formatted_str;
+        break;
+    }
+  }
+  return [child_params, script_later];
+}
+
+/* function: aop_action_format
+ * params: script_str = string to format,
+ *         i = agent input string,
+ *         t = token matched,
+ *         s = list of child substrs,
+ *         v = name of variable passed to agent,
+ *         j = name of variable containing input string
+ *         p = list of child parameters to be passed
+ * returns: formatted string
+ */
+func aop_action_format {
+  para script_str, i, t, s, v, j, p;
+  auto formatted_str, x, y;
+  
+  formatted_str = "";
+  
+  ##loop through characters
+  for (x = 1; x <= script_str#; x++) {
+    
+    if (script_str[x] == '$' && x < script_str#) {
+      x++;
+      switch (script_str[x]) {
+        case 'i':
+          formatted_str = formatted_str // i;
+          break;
+        case 't':
+          formatted_str = formatted_str // t;
+          break;
+        case 'v':
+          formatted_str = formatted_str // v;
+          break;
+        case 'j':
+          formatted_str = formatted_str // j;
+          break;
+        case 's':
+          if (x < script_str# && isdigit(script_str[++x])) {
+            y = int(script_str[x])-48;
+            if (y > 0 && y <= s#)
+              formatted_str = formatted_str // s[y];
+            else
+              aop_error(AOP_WARNING, "script variable does not exist: $s" // script_str[x]);
+          }
+          else
+            aop_error(AOP_WARNING, "expected digit after $s");
+          break;
+        case 'p':
+          if (x < script_str# && isdigit(script_str[++x])) {
+            y = int(script_str[x])-48;
+            if (y > 0 && y <= p#)
+              formatted_str = formatted_str // p[y];
+            else
+              aop_error(AOP_WARNING, "script variable does not exist: $p" // script_str[x]);
+          }
+          else
+            aop_error(AOP_WARNING, "expected digit after $p");
+          break;
+        case '$':
+          formatted_str = formatted_str // script_str[x];
+          break;
+        default:
+          aop_error(AOP_WARNING, "script variable does not exist: $" // script_str[x]);
+      }
+    }
+    else {
+      formatted_str = formatted_str // script_str[x];
+    }
+  }
+  return formatted_str;
+}
+
+/* function: aop_action_execute
+ * params: string to execute
+ * returns: nothing
+ * notes: redefine this function to do clever things like
+ *   delaying executing the string until later
+ */
+func aop_action_execute {
+  para script_str;
+  execute(script_str);
+}
+
+
+
+
+/* agent.e [17/11/2002][Ant] */
+
+FALSE = 0;
+TRUE = 1;
+aop_debug = FALSE;
+
+func aop_agent {
+  para instr, rulename, param;
+  auto ruledef, paracount, op_name, op_value, child_rules, ignore, script, fail_rule;
+  auto i, result, token_matched, child_substrs, child_params, children, instr_var, old_script, later;
+
+  /* load data for rule into local variable */
+  ruledef = getvar(rulename);
+  
+  /* check it is a valid ruledef template */
+  if (! isdefined(ruledef))
+    return "undefined";
+  if (type(ruledef) != "list" || ruledef# < 2)
+    return "badagent";
+
+  /* get the operation name and value, i.e. pivot and "=" */
+  paracount = 1;
+  op_name = ruledef[paracount++];
+  op_value = ruledef[paracount++];
+  
+  /* get the agents to create on success */
+  switch (aop_has_children(op_name)) {
+    case 0:
+      if (ruledef# >= paracount && ruledef[paracount] == [])
+        paracount++;
+      child_rules = [];
+      break;
+    default:
+      if (type(ruledef[paracount]) == "string")
+        child_rules = [ruledef[paracount++]];
+      else if (type(ruledef[paracount]) == "list")
+        child_rules = ruledef[paracount++];
+      else
+        child_rules = [];
+      if (child_rules == [])
+        return "badagent";
+      break;
+  }
+
+  /* set default values */
+  ignore = [];
+  script = [];
+  old_script = FALSE;
+  fail_rule = "";
+
+  /* get the optional arguments */
+  while (paracount <= ruledef#) {
+    
+    /* check this is a valid argument */
+    if (type(ruledef[paracount]) != "list" || ruledef[paracount]# < 2) {
+      aop_error(AOP_WARNING, "rule has unreadable items: \""//rulename//"\"");
+      paracount++;
+      continue;
+    }
+
+    switch (ruledef[paracount][1]) {
+      case "ignore":
+        /* blocks to ignore */
+        ignore = ruledef[paracount][2];
+        break;
+
+      case "fail":
+        /* child to create on failure */
+        fail_rule = ruledef[paracount][2];
+        break;
+
+      case "script":
+        /* old style script to run */
+        old_script = TRUE;
+        if (script != [])
+          return "badagent";
+        for (i = 2; i <= ruledef[paracount]#; i++)
+          script = script // [ruledef[paracount][i]];
+        break;
+        
+      case "action":
+        /* script actions */
+        old_script = FALSE;
+        if (script != [])
+          return "badagent";
+        for (i = 2; i <= ruledef[paracount]#; i++)
+          script = script // [ruledef[paracount][i]];
+        break;
+
+      default:
+        /* unrecognised argument */
+        return "badagent";
+    }
+
+    paracount++;
+  }
+
+  /* strip whitespace from beginning and end of string */
+  instr = stripspace(instr);
+
+  /* perform operation */
+  result = aop_operation(instr, op_name, op_value, ignore);
+
+  /* badly formed operation */
+  if (result == "badop")
+    return "badagent";
+
+  /* operation did not return a match */
+  if (result == FAIL) {
+    if (fail_rule == "")
+      /* if no fail template then parsing has failed */
+      return "fail";
+    else
+      /* else pass string, and all variables to next ruledef */
+      return [[[instr, fail_rule, param]],[]];
+  }
+
+  /* simplify result to token and child strings */
+  token_matched = result[1];
+  child_substrs = result[2];
+
+  /* execute script */
+  if (old_script) {
+    /* using old style scripts - set globals */
+    v_string = instr;
+    v_match = token_matched;
+    if (op_name == "read_all")
+      v_substrs = [token_matched];
+    else
+      v_substrs = child_substrs;
+    v_paras = param;
+    
+    result = aop_script_old(script, child_substrs#);
+  }
+  else {
+    /* using new style scripts */
+    instr_var = makevarname();
+    execute(instr_var // "=\"" // escapequotes(instr) // "\";");
+    result = aop_action(script, instr, token_matched, child_substrs, param, instr_var);
+  }
+  
+  child_params = result[1];
+  later = result[2];
+
+  /* useful debug information */
+  if (aop_debug == 1) {
+    writeln("\n***");
+    writeln("OPERATION: ",op_name,", ",op_value,", ",instr,";");
+    writeln("RESULT: ",token_matched,", ",child_substrs,";");
+    writeln("SCRIPT: ", script, ";");
+    writeln("RESULT: ",child_params,";\n");
+  }
+
+  /* create child list with inputs, rules and parameters */
+  children = [];
+  for (i = 1; i <= child_substrs#; i++) {
+    children = children // [ [ child_substrs[i],
+                               child_rules[((i-1)%child_rules#)+1],
+                               child_params[i] ] ];
+  }
+  
+  aop_agent_end(rulename, op_name, op_value, param, instr, instr_var, token_matched, child_substrs, child_rules, child_params, script);
+
+  return [children, later];
+}
+
+func aop_script_old {
+  para script, children;
+  auto i, j, k, instruction, return_params, all_vars, var_tmp, str_tmp, exec_args, later;
+
+  later = [];
+  return_params = [];
+
+  while (return_params# < children)
+    append return_params, [];
+
+  for (i = 1; i <= script#; i++) {
+    
+    /* each script instruction */
+    instruction = script[i];
+
+    switch (instruction[1]) {
+
+    case "declare":
+      /* for each script variable, a local EDEN string variable is
+         created to hold the name of a persistent, uniquely named
+         EDEN variable */
+      for (j = 2; j <= instruction#; j++)
+        execute (instruction[j] // " = \"" // makevarname() // "\";");
+      break;
+
+    case "setparas":
+      for (j = 2; j <= instruction#; j++) {
+        /* add the EDEN variable names of the script variables indicated to
+           the list of each childs parameters */
+        for (k = 1; k <= instruction[j]#; k++)
+          return_params[j-1] = return_params[j-1] // [getvar(instruction[j][k])];
+      }
+      break;
+
+    case "allparas":
+      if (children < 1)
+        break;
+
+      /* all_vars holds the name of the list of all variables */
+      all_vars = makevarname();
+
+      /* create a script variable with the given name to the list of all variables */
+      execute(instruction[2] // " = \"" // all_vars // "\";");
+
+      /* start to build up the list of variables */
+      var_tmp = makevarname();
+      str_tmp = all_vars // " is [" // var_tmp;
+
+      return_params[1] = return_params[1] // [var_tmp];
+
+      /* for each child */
+      for (j = 2; j <= children; j++) {
+        /* make a new EDEN variable and add it to the list of variables*/
+        var_tmp = makevarname();
+        str_tmp = str_tmp // ", " // var_tmp;
+
+        /* add the new variable to the childs parameter list */
+        return_params[j] = return_params[j] // [var_tmp];
+      }
+
+      /* create the list of variables */      
+      str_tmp = str_tmp // "];";
+      execute(str_tmp);
+      break;
+
+    case "execute":
+      /* extract the variable names */
+      exec_args = [];
+      for (j = 3; j <= instruction#; j++)
+        exec_args = exec_args // [instruction[j]];
+
+      /* format once to substitute for %%s */
+      str_tmp = format(instruction[2], exec_args);
+
+      /* format again to substitute for $$s */
+      str_tmp = format(str_tmp[1], str_tmp[2]);
+
+      /* execute command */
+      execute(str_tmp[1]);
+      break;
+
+    case "later":
+      /* extract the variable names */
+      exec_args = [];
+      for (j = 3; j <= instruction#; j++)
+        exec_args = exec_args // [instruction[j]];
+
+      /* format once to substitute for "%%"s but do not substitute
+         for "$$"s until later, when the variables will have been defined*/
+
+      str_tmp = format(instruction[2], exec_args);
+
+      /* save command to be executed later */
+      later = later // [str_tmp];
+      break;
+
+    default:
+    }
+  }
+
+  return [return_params, later];
+}
+
+func aop_has_children {
+  para op_name;
+  switch (op_name) {
+    case "literal":
+    case "read_all":
+    case "literal_re":
+      return 0;
+    case "pivot":
+    case "rev_pivot":
+      return 2;
+    default:
+      return 1;
+  }
+}
+
+proc aop_agent_end {
+  para rulename, op_name, op_value, param, instr, instr_var, token_matched, child_substrs, child_rules, child_params, script;
+  return;
+}
+
+
+
+/* error.e [15/11/2002][Ant] */
+
+/* constants */
+AOP_ERROR = 1;
+AOP_WARNING = 2;
+
+/* set this to false to suppress warning messages */
+aop_show_warnings = TRUE;
+
+/* function: aop_error
+ * params: err_type = 1 for error or 2 for warning,
+           err_text is string of error message
+ * returns: nothing
+ * notes: maybe change this function to throw eden style errors - error()
+ */
+func aop_error {
+  para err_type, err_text;
+  switch (err_type) {
+    case 2: ##AOP_WARNING
+      if (aop_show_warnings)
+        writeln("WARNING: AOP: ", err_text);
+      break;
+    case 1: ##AOP_ERROR
+    default:
+      writeln("ERROR: AOP: ", err_text);
+      break;
+  }
+}
+
+
+
+/* operations.e [09/11/2002][Ant] */
+
+FAIL = 0;
+
+/* pivot finds a sub-string, ignoring given blocks, and returns the
+   sub-strings on either side of it */
+func aop_pivot {
+  para instr, pivot, ignore;
+  auto i;
+  
+  i = extract(instr, pivot, ignore, 1);
+  
+  if (i == 0)
+    return FAIL;
+  else
+    return [pivot, [substr(instr, 1, i - 1), substr(instr, i + pivot#, instr#)]];
+}
+
+/* pivot_rev is pivot but searches from the end of the string backwards */
+func aop_pivot_rev {
+  para instr, pivot, ignore;
+  auto str, i, j;
+  
+  i = extract (instr, pivot, ignore, 1);
+  
+  if (i == 0)
+    return FAIL;
+
+  while (i != 0) {
+    j = i;
+    i = extract (instr, pivot, ignore, j + pivot#);
+  }
+
+  return [pivot, [substr(instr, 1, j-1), substr(instr, j+pivot#, instr#)]];
+}
+
+/* split divides a string into chunks using a separator, ignoring all
+       occurrences of the separator within the given blocks */
+func aop_split {
+	para instr, split, ignore;
+	auto i, j, list;
+
+	i = 1;
+	list = [];
+
+	while (1) {
+		j = extract (instr, split, ignore, i);
+
+		if (j == 0)
+			return [split] // [list // [substr (instr, i, instr#)]];
+
+		list = list // [substr (instr, i, j - 1)];
+		i = j + split#;
+	}
+}
+
+/* read_prefix matches a prefix to a sort of regular expresion
+   it returns the prefix found and the remainder */
+func aop_read_prefix {
+  para instr, chars, count;
+  auto result;
+
+  if (chars == []) {
+    if (count == "*")
+      return [instr, []];
+    else if (count <= instr#)
+      return [substr(instr, 1, count), [substr(instr, count + 1, instr#)]];
+    else
+      return FAIL;
+  }
+  else {
+    if (count == "*")
+      result = chars_begin(instr, chars);
+    else
+      result = chars_finite_begin(instr, chars, count);
+    if (result == [])
+      return FAIL;
+    return [ result[1], [result[2]] ];
+  }
+}
+
+/* read_suffix matches a suffix to a sort of regular expresion
+   it returns the suffix found and the remainder */
+func aop_read_suffix {
+  para instr, chars, count;
+  auto result;
+
+  if (chars == []) {
+    if (count == "*")
+      return [instr, []];
+    else if (count <= instr#)
+      return [substr(instr, 1, instr#-count), substr(instr, instr#-count+1, instr#)];
+    else
+      return FAIL;
+  }
+  else {
+    if (count == "*")
+      result = chars_end(instr, chars);
+    else
+      result = chars_finite_end(instr, chars, count);
+    if (result == [])
+      return FAIL;
+    return [ result[1], [result[2]] ];
+  }
+}
+
+/* read_all attempts to match a string to a sort of regular expresion
+   it returns either the string, or [] if it did not match */
+func aop_read_all {
+  para instr, chars;
+  auto result;
+
+  if (chars == [])
+    return [instr, []];
+
+  result = chars_finite_begin (instr, chars, instr#);
+
+  if (result == [])
+    return FAIL;
+  
+  /*strange behaviour, for some reason the old "read_all" does this backwards!
+  return ["", [instr]]; */
+  return [instr, []];
+}
+
+/* prefix checks a string for a literal prefix */
+func aop_prefix {
+  para instr, prefix;
+  auto i;
+
+  if (prefix# > instr#)
+    return FAIL;
+
+  for (i = 1; i <= prefix#; i++)
+    if (prefix[i] != instr[i])
+      return FAIL;
+
+  return [prefix, [substr(instr, prefix#+1, instr#)]];
+}
+
+/* suffix checks a string for a literal suffix */
+func aop_suffix {
+  para instr, suffix;
+  auto i;
+
+  if (suffix# > instr#)
+    return FAIL;
+
+  for (i = 0; i < suffix#; i++)
+    if (suffix[suffix# - i] != instr[instr# - i])
+      return FAIL;
+
+  return [suffix, [substr(instr, 1, instr#-suffix#)]];
+}
+
+func aop_literal_re {
+  para instr, pattern;
+  auto matches, i;
+  matches = regmatch(pattern, instr);
+  for (i = 1; i <= matches#; i++)
+    if (matches[i] == instr)
+      return [instr, []];
+  return FAIL;
+}
+
+func aop_prefix_re {
+  para instr, pattern;
+  auto matches, result;
+  matches = regmatch(pattern, instr);
+  for (i = 1; i <= matches#; i++) {
+    result = aop_prefix(instr, matches[i]);
+    if (result != FAIL)
+      return result;
+  }
+  return FAIL;
+}
+
+func aop_suffix_re {
+  para instr, pattern;
+  auto matches, result;
+  matches = regmatch(pattern, instr);
+  for (i = 1; i <= matches#; i++) {
+    result = aop_suffix(instr, matches[i]);
+    if (result != FAIL)
+      return result;
+  }
+  return FAIL;
+}
+
+func aop_operation {
+  para instr, op_name, op_value, ignore;
+  auto result;
+
+  switch (op_name) {
+    
+    case "prefix":
+      result = aop_prefix(instr, op_value);
+      break;
+
+    case "suffix":
+      result = aop_suffix(instr, op_value);
+      break;
+
+    case "pivot":
+      result = aop_pivot(instr, op_value, ignore);
+      break;
+
+    case "rev_pivot":
+      result = aop_pivot_rev(instr, op_value, ignore);
+      break;
+
+    case "split":
+      result = aop_split(instr, op_value, ignore);
+      break;
+
+    case "read_prefix":
+      if (type(op_value) != "list" || op_value# < 2)
+        return ["badop"];
+      result = aop_read_prefix(instr, op_value[1], op_value[2]);
+      break;
+
+    case "read_suffix":
+      if (type(op_value) != "list" || op_value# < 2)
+        return ["badop"];
+      result = aop_read_suffix(instr, op_value[1], op_value[2]);
+      break;
+
+    case "read_all":
+      result = aop_read_all(instr, op_value);
+      break;
+
+    case "literal":
+      if (instr != op_value)
+        result = FAIL;
+      else
+        result = [instr, []];
+      break;
+
+    case "literal_re":
+      result = aop_literal_re(instr, op_value);
+      break;
+
+    case "prefix_re":
+      result = aop_prefix_re(instr, op_value);
+      break;
+
+    case "suffix_re":
+      result = aop_suffix_re(instr, op_value);
+      break;
+
+    default:
+      return ["badop"];
+  }
+
+  return result;
+}
+
+
+
+
+/* parse.e [18/11/2002][Ant] */
+
+proc aop_parse {
+  para instr, start_agent;
+  auto agent_queue, script_later, agent, result, i, tmp_str;
+
+  /* make \ characters escaped - [Charlie v211] */
+  instr = regreplace("\\\\","\\\\\\\\",instr);
+
+  /* initialise the commands that the agents may ask us to run later*/
+  script_later = [];
+
+  /* initialise the list of agents to be run to the first */
+  agent_queue = [[instr, start_agent, makevarname()]];
+
+  /* get the next agent */
+  while ((agent = removehead(&agent_queue)) != []) {
+    
+    /* run it */
+    result = aop_agent(agent[1], agent[2], agent[3]);
+
+    /* make sure it ran ok */
+    if (result == "badagent") {
+      aop_error(AOP_ERROR, "agent is badly defined: \"" // agent[2] // "\"");
+      return;
+    }
+    else if (result == "undefined") {
+      aop_error(AOP_ERROR, "agent is undefined: \"" // agent[2] // "\"");
+      return;
+    }
+    else if (result == "fail") {
+      aop_error(AOP_ERROR, "parse failure");
+      return;
+    }
+    else {
+      /* add the child agents to the beginning of the queue */
+      agent_queue = result[1] // agent_queue;
+      /* append the script actions to be run after the child agents */
+      script_later = result[2] // script_later;
+    }
+  }
+
+  /* execute the later list */
+  for (i = 1; i <= script_later#; i++) {
+    if (type(script_later[i]) == "string") {
+      ##new style script
+      aop_action_execute(script_later[i]);
+    }
+    else {
+      ##old style script
+      tmp_str = format(script_later[i][1], script_later[i][2]);
+      execute(tmp_str[1]);
+    }
+  }
+}
+
+
+
+
+aop_notations = [];
+aop_buffers = [];
+
+proc installAOP {
+  para name, info;
+  auto ni;
+
+  ni = newNotation(name, &aopSwitch, &aopParseChar);
+
+  while (ni > aop_notations#) append aop_notations, "";
+  while (ni > aop_buffers#) append aop_buffers, "";
+
+  aop_notations[ni] = info;
+  aop_buffers[ni] = "";
+}
+
+proc aopParseChar {
+  para c;
+  auto l, splitchar, firstrule, ignore, i;
+
+  if ((currentNotation < 1) || (currentNotation > aop_notations#))
+    error("aopParseChar called when a non-AOP notation is in effect");
+
+  l = `aop_notations[currentNotation]`;
+
+  if (l# != 3)
+    error("the AOP initialisation variable " // notations[currentNotation] //
+	  " must be a list with 3 items");
+
+  splitchar = l[1]; firstrule = l[2]; ignore = l[3];
+
+  aop_buffers[currentNotation] = aop_buffers[currentNotation] // c;
+
+  i = extract(aop_buffers[currentNotation], splitchar, ignore, 1);
+
+  if (i != 0) {
+    if (!isspace (aop_buffers[currentNotation]))
+      aop_parse(aop_buffers[currentNotation], firstrule, []);
+    aop_buffers[currentNotation] = "";
+  }
+
+}
+
+proc aopSwitch {
+}
+
+
+
+
+/* utils.e - contains utility functions */
+
+aop_varcount = 0;
+
+func makevarname {
+    return "aop_var_" // str (aop_varcount++);
+}
+
+func getvar {
+	para instr;
+	aop_tempvr = "ERROR";
+	execute ("aop_tempvr = " // instr // ";");
+	return aop_tempvr;
+}
+
+func isdefined {
+    para x;
+    auto i;
+    if (x == @)
+        return 0;
+
+    if (type  (x) == "list")
+        for (i = 1; i <= x#; i++)
+            if (!isdefined (x [i]))
+                return 0;
+
+    return 1;
+}
+
+func make_str {
+    para data;
+    auto outstr, i;
+
+    if (type (data) != "list")
+        return str (data);
+
+    if (data# < 1)
+        return "[]";
+
+    if (type (data [1]) == "string")
+        outstr = "[\"" // str (data [1]) // "\"";
+    else
+        outstr = "[" // make_str (data [1]);
+
+    for (i = 2; i <= data#; i++)
+        if (type (data [i]) == "string")
+            outstr = outstr // ", \"" // str(data [i]) // "\"";
+        else
+            outstr = outstr // ", " // make_str (data [i]);
+
+    return outstr // "]";
+}
+
+func stripspace {
+    para instr;
+    auto begin, end;
+    
+    if (instr == "")
+        return "";
+    
+    begin = 1;
+    while (begin <= instr# && issp (instr[begin])) begin++;
+
+    end = instr#;
+    while (end >= 0 && issp (instr[end])) end--;
+
+    return substr (instr, begin, end);
+}
+
+func isspace {
+    para instr;
+    auto i;
+    for (i = 1; i <= instr#; i++)
+        if (!issp (instr [i]))
+	    return 0;
+
+    return 1;
+}
+
+func issp {
+    para c;
+    return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
+}
+
+func escapequotes {
+    para instr;
+    auto i, outstr;
+    outstr = "";
+
+    for (i = 1; i <= instr#; i++) {
+        if (instr [i] == '"')
+	    outstr = outstr // str('\\');
+
+        outstr = outstr // str(instr [i]);
+    }
+
+    return outstr;
+}
+
+func issuffix {
+	para instr, suffix;
+	auto i;
+
+	if (instr# < suffix#)
+		return 0;
+
+	for (i = 0; i < suffix#; i++)
+		if (instr [instr# - i] != suffix [suffix# - i])
+			return 0;
+
+	return 1;
+}
+
+func tail {
+	para inlist;
+	auto ret, i;
+	ret = [];
+	for (i = 2; i <= inlist#; i++)
+		ret = ret // [inlist [i]];
+
+	return ret;
+}
+
+func cutquotes {
+    para instr;
+    auto i, outstr;
+    outstr = "";
+
+    for (i = 1; i <= instr#; i++)
+        if (instr [i] != '"')
+            outstr = outstr // str(instr [i]);
+
+    return outstr;
+}
+
+func applytoeach {
+    para f, l;
+    auto i, result;
+
+    result = [];
+
+    for (i = 1; i <= l#; i++)
+        result = result // [f (l [i])];
+
+    return result;
+}
+
+func getline {
+    auto result, c;
+
+    result = "";
+
+    while ((c = getchar ()) != 10)
+        result = result // char (c);
+
+    return result;
+}
+
+func _str {
+    return "\"" // $1 // "\"";
+}
+
+func isdigit {
+	para sym;
+	return ('0' <= sym && sym <= '9');
+}
+
+func ischar {
+	para sym;
+	return (('A' <= sym && sym <= 'Z') || ('a' <= sym && sym <= 'z'));
+}
+
+func isalphanum {
+	para c;
+	return (ischar (c) || isdigit (c) || (c == '_'));
+}	
+
+func converttonum {
+	para instr;
+	auto i, radix, sum;
+	i = instr#;
+	radix = 1;
+	sum = 0;
+
+	while (i >= 1) {
+		if (!isdigit(instr [i]) && (instr [i] != ' '))
+			return instr;
+
+		if (isdigit (instr [i])) {
+			sum += ((instr [i] - '0') * radix);
+			radix = radix * 10;
+		}
+		
+		i--;
+	}
+
+	return sum;
+}
+
+
+/* blocks.e - contains functions for string searching while ignoring blocks */
+
+/* list of all registered blocks */
+scope_blocks = [];
+
+/* function to register blocks */
+proc addblocks {
+    scope_blocks = scope_blocks // $;
+}
+
+/* some built-in blocks */
+bras = [["(", ")"], ["bras"]];
+sq_bras = [["[", "]"], ["sq_bras"]];
+
+addblocks ("bras", "sq_bras");
+
+/* find
+   instr: a string
+   str: a string
+   start: an index into instr
+   returns: the index of the first occurrence of str in instr after start
+*/
+func find {
+	para instr, str, start;
+	auto i, j, flag;
+	
+	for (i = start; i <= instr# - str# + 1; i++) {
+		flag = 1;
+
+		for (j = 1; j <= str# && flag == 1; j++)
+			if (str[j] != instr[i + j - 1])
+				flag = 0;
+
+		if (flag == 1)
+			return i;
+	}
+
+	return 0;
+}
+
+/* findfirst
+   instr: a string
+   strings: a list of strings
+   start: an index into instr
+   returns: the element of strings that first occurs
+       (after index start) in instr together with its index
+*/
+func findfirst {
+	para instr, strings, start;
+	auto i, j, string, position;
+
+	string = "";
+	position = 0;
+	
+	for (i = 1; i <= strings#; i++) {
+		j = find (instr, strings [i], start);
+		if (j == 0)
+			continue;
+
+		if (j < position || position == 0) {
+			position = j;
+			string = strings [i];
+		}
+	}
+
+	return [string, position];
+}
+
+
+/* to search while ignoring blocks, a stack is maintained of the symbols
+   that we are looking for
+   thestack = [";", ["var"]], [..], .. [symbol to find, [symbols to ignore]]
+*/
+
+proc emptystack {
+	thestack = [];
+	pointer = 0;
+}
+
+proc push {
+	para item;
+	pointer++;
+
+	if (pointer > thestack#)
+		thestack = thestack // [item];
+	else
+		thestack [pointer] = item;
+}
+
+func pop {
+	if (pointer < 1)
+		return [];
+
+	pointer--;
+	return thestack [pointer + 1];
+}
+
+
+/* getblockfromstartsym
+   instr: the starting symbol of a block
+   returns: the block with this starting symbol
+*/
+func getblockfromstartsym {
+	para instr;
+	auto i, b;
+	
+	for (i = 1; i <= scope_blocks#; i++) {
+		b = getvar (scope_blocks [i]);
+		if (b [1][1] == instr)
+			return b;
+	}
+
+	writeln ("unknown block \"" // instr // "\"");
+	return [];
+}
+
+/* getblockfromname
+   name: the name of a block
+   returns: the block, if it is a block, otherwise []
+*/
+func getblockfromname {
+	para name;
+	auto b;
+
+	b = getvar (name);
+	if (b# != 2 || b[1]# < 2) {
+		writeln ("unknown block \"" // name // "\"");
+		return [];
+	} else
+		return b;
+}
+
+
+/* getstartsyms
+   blocks: a list of block names
+   returns: a list containing the start symbol for each block
+*/
+func getstartsyms {
+	para blocks;
+	auto i, b, out;
+
+	out = [];
+
+	for (i = 1; i <= blocks#; i++) {
+		b = getblockfromname (blocks [i]);
+		if (b != [])
+			out = out // [b [1][1]];
+	}
+
+	return out;
+}
+
+
+/* extract - major export
+   instr: a string
+   match: a string
+   ignore: a list of block names
+   start: an index into instr
+   returns: the first occurrence in instr after start of match
+   that is not within any of the blocks in ignore
+*/
+func extract {
+	para instr, match, ignore, start;
+	auto pos, first, new_symbol, old_symbol, cur_match, cur_ignore, i;
+
+    /* cur_match stores the string we are looking for
+       cur_ignore stores the strings that mark the start
+       of the blocks that we want to ignore */
+	pos = start;
+	cur_match = match;
+	cur_ignore = getstartsyms (ignore);
+	emptystack ();
+
+	while (1) {
+	    /* search for the string we are looking for and also the symbols to ignore */
+		first = findfirst (instr, [cur_match] // cur_ignore, pos);
+		/* nothing found */
+		if (first == ["", 0])
+			return 0;
+
+        /* position to start from is set to after that which we have just read */
+		pos = first [2] + first [1]#;
+
+        /* if we encountered a block we are ignoring */
+		if (first [1] != cur_match) {
+		    /* save what we were looking for */
+			push ([cur_match, cur_ignore]);
+
+            /* find the block's end symbol and start looking for it*/
+			new_symbol = getblockfromstartsym (first [1]);
+			if (new_symbol == [])
+				return 0;
+
+			/* might have to match more than 2 symbols, e.g proc ; ; not just proc ; */
+
+			cur_match = new_symbol [1][2];
+			cur_ignore = getstartsyms (new_symbol [2]);
+
+            /* save the additional symbols to be found later */
+			for (i = new_symbol[1]#; i > 2; i--)
+				push ([new_symbol [1][i], cur_ignore]);
+
+		} else {
+		    /* we found what we were looking for */
+            /* find out the last thing we were looking for,
+               before we were interrupted */
+			old_symbol = pop ();
+
+			if (old_symbol == []) {
+			    /* this is what we started off looking for, and it  is found*/
+				return (first [2]);
+			} else {
+		        /* there is more to find, continue looking */
+		        cur_match = old_symbol [1];
+				cur_ignore = old_symbol [2];
+			}
+		}
+	}
+}
+
+
+/* ops.e - implements the string operations that an agent can perform */
+
+/* charmatch
+   c: a character
+   charset: a list of lists, each representing characters to match
+   returns: whether c matches any of the lists in charset
+*/
+func charmatch {
+	para c, charset;
+
+    /* one element lists simply contain a character to match */
+	if (charset# == 1 && char (c) == char (charset [1]))
+		return 1;
+
+	/* two element lists contain an interval of characters */
+	if (charset# == 2 && char (c) >= char (charset [1]) && char (c) <= char (charset [2]))
+		return 1;
+
+	return 0;
+}
+
+
+/* chars_finite_begin
+   instr: a string
+   chars: a list of character matches as accepted by charmatch
+   count: a number
+   returns: the first count characters if they match chars else []
+*/
+func chars_finite_begin {
+	para instr, chars, count;
+	auto i, j, match;
+
+	if (count > instr#)
+		return [];
+
+	for (i = 1; i <= count; i++) {
+            match = 0;
+
+		for (j = 1; j <= chars#; j++)
+			if (charmatch (instr [i], chars [j]))
+				match = 1;
+
+		if (!match)
+			return [];
+	}
+
+	return [substr (instr, 1, count), substr (instr, count + 1, instr#)];
+}
+
+/* chars_finite_end
+   instr: a string
+   chars: a list of character matches as accepted by charmatch
+   count: a number
+   returns: the last count characters if they match chars else []
+*/
+func chars_finite_end {
+	para instr, chars, count;
+	auto i, j, match;
+
+	if (count > instr#)
+		return [];
+
+	for (i = instr#; i >= instr# - count; i--) {
+        	match = 0;
+
+		for (j = 1; j <= chars#; j++)
+			if (charmatch (instr [i], chars [j]))
+				match = 1;
+
+		if (!match)
+			return [];
+	}
+
+	return [substr (instr, 1, instr# - count), substr (instr, instr# - count + 1, instr#)];
+}
+
+
+/* chars_begin
+   instr: a string
+   chars: a list of character matches as accepted by charmatch
+   returns: the biggest prefix of instr s.t. all its character match chars
+*/
+func chars_begin {
+	para instr, chars;
+	auto i, j;
+
+	i = 1;
+
+	while (i <= instr#) {
+        	match = 0;
+
+		for (j = 1; j <= chars#; j++)
+			if (charmatch (instr [i], chars [j]))
+				match = 1;
+
+		if (!match)
+			break;
+
+		i++;
+	}
+
+	return [substr (instr, 1, i - 1), substr (instr, i, instr#)];
+}
+
+/* chars_end
+   instr: a string
+   chars: a list of character matches as accepted by charmatch
+   returns: the biggest suffix of instr s.t. all its character match chars
+*/
+func chars_end {
+	para instr, chars;
+	auto i, j, match;
+
+	i = instr#;
+
+	while (i >= 1) {
+        	match = 0;
+
+		for (j = 1; j <= chars#; j++)
+			if (charmatch (instr [i], chars [j]))
+				match = 1;
+
+		if (!match)
+			break;
+
+		i--;
+	}
+
+	return [substr (instr, 1, i), substr (instr, i + 1, instr#)];
+}
+
+func removehead {
+    para listptr;
+    auto temp, i, item;
+
+    if (*listptr == [])
+        return [];
+
+    temp = [];
+    item = (*listptr) [1];
+
+    for (i = 2; i <= (*listptr)#; i++)
+        temp = temp // [(*listptr) [i]];
+
+    *listptr = temp;
+
+    return item;
+}
+
+/* general agent templates */
+
+nothing = ["literal", ""];
+anything = ["read_all", []];
+alphanum = ["literal_re", "[a-zA-Z0-9_]+"];
+number = ["literal_re", "[0-9]+"];
+float_num = ["pivot", ".", ["number","number"], ["fail","number"] ];
+ident = ["literal_re", "[a-zA-Z_][a-zA-Z0-9_]*"];
+
+
+
+/* %aop notation */
+
+include(getenv("TKEDEN_LIB")//"/aop_notation.eden");
+

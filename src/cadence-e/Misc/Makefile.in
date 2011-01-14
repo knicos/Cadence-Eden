@@ -1,0 +1,8 @@
+#
+# $Id: Makefile.in,v 1.10 2001/07/27 16:22:10 cssbz Exp $
+#
+
+SOURCES = custom.c curses.c
+LIB = libmisc.a
+
+include ../generic.mk

@@ -1,0 +1,1405 @@
+/*
+ * $Id: eden.eden,v 1.3 2002/07/10 19:29:38 cssbz Exp $
+ */
+
+/* This is used by Web EDEN to send command to the user interface */
+proc weden_SendEDENOutput
+{
+	
+	auto s;
+	
+	if ($# == 0) {
+		return;
+	}
+	
+	s = str($1);
+	for (i = 2; i <= $#; i++)
+		s = strcat(s, "", str($[i]));
+	
+	tcl("weden_SendCompleteRealTimeMessage {"//s//"}");
+	
+}
+
+
+/*---------------------------------------------------------------------------
+function macro(macro_str, para_str1, para_str2, .., para_strN)
+  Expands 'macro_str' by substituting 'para_strI' for "?I" and returns the 
+  resultant string (ref.: Edward Yung, M.Sc. thesis, `89, vol.2).
+---------------------------------------------------------------------------*/
+
+func macro {
+  auto i, j, l, m, n, c, s;
+  s = "";
+  l = (m = $1)#;
+  shift;
+  i = 1;
+  while (i <= l) {
+    for (j = i; j <= l && m[j] != '?'; j++);
+    if (i != j) s = s // substr(m, i, j - 1);
+    if (j <= l) {
+      j++;
+      n = (c = (j > l) ? '?' : m[j]) - '0';
+      s = s // ((1 <= n && n <= $#) ? $[n] : c);
+    }
+    i = j + 1;
+  }
+  return s;
+}
+
+proc installeddi {
+  include(getenv("TKEDEN_LIB")//"/eddi.eden");
+}
+
+/* symboldefinition returns the Eden definition of a symbol s in a form
+   that can be given to the Eden parser (via execute(), todo() etc),
+   whatever the type of symbol s.  It will return a blank string when asked
+   for the definition of a builtin function (since there is no meaningful
+   Eden code representation of the function).  This function is intended to
+   fix problems with the data returned by symboldetail() etc.  Pass
+   symboldefinition a string naming the symbol or a pointer to the
+   symbol.  [by Ash] */
+func symboldefinition {
+  para s;
+  auto sd, ret;
+
+  /* need to avoid evaluating s if it is a formula -- if we do, then the
+     definition 
+       s is symboldefinition("s");
+     (and other larger examples that include this dependency) will
+     cause "nested too deeply" evaluation loop as the evaluation will cause
+     Eden to evaluate s on demand when it is already being evaluated.
+     Therefore we use 's' as a string reference throughout and avoid using
+     functions that will initiate evaluation if s is a formula. */
+
+  /* convert s to a string if it is not already */
+  if (type(s) == "pointer")
+    s = nameof(s);
+  else if (type(s) != "string")
+    error("address or symbol name needed (got "//type(s)//")");
+
+  sd = symboldetail(s);
+
+  switch (sd[2]) {
+  case "var":
+    /* the `` evaluation that follows is safe because we have determined
+       that s is a RWV, and Eden does not evaluate RWVs on demand */
+    if (type(`s`) == "string")
+      ret = s // "=\"" // str(`s`) // "\";";
+    else
+      ret = s // "=" // str(`s`) // ";";
+    break;
+  case "formula":
+    ret = s // " is" // sd[3];
+    break;
+  case "proc":
+    ret = "proc " // s // " " // sd[3] // ";";
+    break;
+  case "procmacro":
+    ret = "procmacro " // s // " " // sd[3] // ";";
+    break;
+  case "func":
+    ret = "func " // s // " " // sd[3] // ";";
+    break;
+  case "builtin":
+  case "Real-func":
+  case "C-func":
+    ret = "";
+    break;
+  }
+
+  return ret;
+}
+
+
+/* this copies a proc to a new name.  copyproc("rot", "rotnew"); copies
+   the definition of proc rot to proc rotnew. */
+proc copyproc {
+  para old, new;
+  execute("proc " // new // " " // symboltext(old) // ";");
+}
+
+/* this adjusts the definition of a proc so that, when called, the
+   parameters and, optionally, return result are printed.
+   showpara("rot", 1) causes proc rot to show its parameters when
+   called. */
+proc showpara {
+  para p, showret;
+  copyproc(p, p // "_preshowpara");
+  execute(macro("
+proc ?1 {
+  auto ret;
+  write(\"?1: \", $, \"...\");
+  ret=apply(?1_preshowpara, $);
+  if (?2) writeln(ret); else writeln();
+  return ret;
+};
+", str(p), str(showret)));
+}
+
+
+
+
+/* nthroot returns the nth root of the number it is passed and the
+   root it is asked for.  e.g nthroot(4,2)=2, nthroot(81,4)=3 */
+/* there may be some problems with this .. e.g nthroot(1028,10) should
+   = 2 but actually comes out as 2.0000789 etc */
+func nthroot {
+  para num, root;
+
+  return pow(num,1.0/root);
+}
+
+/* Make a real value into an integer with rounding.  (by Chris Roe) */
+func round {
+  para r;
+  if (r-int(r)>=0.5) return int(r)+1;
+  else return int(r);
+}
+
+
+/* The following are some eden primitive functions */
+/* Chris Roe - May 2002 */
+
+/* Each function has a header comment to explain its usage and an example */
+
+/* max returns the maximum of the parameters it is passed.
+   e.g max(1,2)=2, max(1,2,3,4,5,6) = 6. */
+func max {
+  auto result,i,data;
+
+  if (type($[1])=="list") {data= $[1];} else {data = $;}
+
+  result = data[1];
+  for (i=1; i<=data#; i++) 
+  { 
+    if (data[i]>result) {result = data[i];}
+  }
+  return result;
+}
+
+/* min returns the minimum of the parameters it is passed.
+   e.g min(1,2)=1, min(3,4,5,6) = 3 */
+func min {
+  auto result,i,data;
+  
+  if (type($[1])=="list") {data= $[1];} else {data = $;}
+ 
+  result = data[1];
+  for (i=1; i<=data#; i++) 
+  { 
+    if (data[i]<result) {result = data[i];}
+  }
+  return result;
+}
+
+
+/* sum returns the sum of the parameters it is passed. all parameters
+   must be real or integer. e.g sum(3,4,5,6) = 18 */
+func sum {
+  auto i,result,data;
+  
+  if (type($[1])=="list") {data= $[1];} else {data = $;}
+
+  result = 0;
+  for (i=1; i<=data#; i++) 
+  {
+    if ((type(data[i])!="float")&&(type(data[i])!="int")) { return @;}
+    result = result + data[i];
+  }
+  return result;
+}
+
+
+/* average returns the sum of the parameters it is passed. all
+   parameters must be real or integer. e.g average(3,4,5,6) = 4.5. Also
+   works on list, e.g average(b) where b=[33,54,23] etc */
+func average {
+  auto i,result,data;
+
+  if (type($[1])=="list") {data = $[1];} else {data = $;}
+
+  result = 0;
+  for (i=1; i<=data#; i++) 
+  {
+    if ((type(data[i])!="float")&&(type(data[i])!="int")) { return @;}
+    result = result + data[i];
+  }
+  return result/float(data#);
+}
+
+/* abs returns the absolute value of the number it is passed. e.g
+   abs(3.4)=3.4, abs(-2.3)=2.3 */
+func abs {
+  para num;
+
+  if (num>=0) {return num;} else {return -num;}
+}
+
+/* nthroot returns the nth root of the number it is passed and the
+   root it is asked for.  e.g nthroot(4,2)=2, nthroot(81,4)=3 */
+/* there may be some problems with this .. e.g nthroot(1028,10) should
+   = 2 but actually comes out as 2.0000789 etc */
+func nthroot {
+  para num, root;
+
+  return pow(num,1.0/root);
+}
+
+/* factorial returns the factorial of the number it is passed. Only
+   works with integers..  e.g factorial(4)=24, */
+func factorial {
+  para num;
+  auto i,result;
+
+  if ((type(num)!="int")||(num<0)) {return @;}
+  if (num==0) {return 1;}
+  result = 1;
+  for (i=1; i<=num; i++) 
+  {
+    result = result * i;
+  }
+  return result;
+}
+
+/* product returns the product of the parameters it is passed. Only
+   works with numbers...  e.g product(2,3)=6, product(4,7,2)= 56 */
+func product {
+  auto i,result,data;
+
+  if (type($[1])=="list") {data= $[1];} else {data = $;}
+
+  result = 1;
+  for (i=1; i<=data#; i++) 
+    {
+      if ((type(data[i])!="int")&&(type(data[i])!="float")) {return @;}
+      result = result * data[i];
+    }
+  return result;
+}
+
+/* sign returns -1 if the number passed is -ve, 0 if it is 0 and 1 if
+   it is +ve e.g sign(4)=1, sign(-230.2323)= -1 */
+func sign {
+  para num;
+ 
+  if (num<0) {return -1;}
+  if (num>0) {return 1;}
+  return 0;
+}
+
+/* even returns the nearest even number to the number given. negative
+   numbers are adjusted away from zero. e.g even(4.5)=4, even(5.5)=6*/
+func even {
+  para num;
+  /* e.g 4.5 .. int(4.5) = 4, 4%2=0.. so 4 closest even number */
+  if (int(num) % 2 == 0) {return int(num);}
+  /* otherwise got to be odd and closer to the next even number which
+     will be +1 */
+  /* use sign for -ve numbers which will have % result of -1.. try
+     writeln(int(-3.2)%2); */
+  return int(num)+sign(num);
+}
+
+/* even returns the nearest odd number to the number given. negative
+   numbers are adjusted away from zero. e.g odd(4.5)=5, odd(3.5)=3*/
+func odd {
+  para num;
+
+  /* if its closest to an even number, return num+sign(num), i.e the
+     nearest odd */
+  if (int(num) % 2 == 0) {
+    return int(num)+sign(num);
+  }
+  /* otherwise int is already odd so return that.. */
+  return int(num);
+}
+
+/* mround returns the number rounded to the nearest multiple.. e.g
+   mround(62,6)=60 */
+func mround { 
+  para num,multiple;
+
+  /* need to force floating point division */
+  return sign(num)*round(float(abs(num))/multiple)*multiple;
+}
+
+/* sumsq returns the sum of the squares of the parameters passed to
+   it, e.g sumsq(2,3,4) = 29 */
+func sumsq {
+  auto i, result,data;
+
+  if (type($[1])=="list") {data= $[1];} else {data = $;}
+
+  result = 0;
+  for (i=1; i<=data#; i++) 
+  {
+    if ((type(data[i])!="int")&&(type(data[i])!="float")) {return @;}
+    result = result + (data[i]*data[i]);
+  }
+  return result;
+}
+
+/* trunc returns the number with the fractional part removed. this is
+   the same as the int function in eden - included for
+   completeness.. e.g trunc(4.56)=4 */
+func trunc {
+  return int($[1]);
+}
+
+/* combin returns the number of ways n items can be picked from a
+   total number of items.  the n cannot be more than the total..  e.g
+   combin(4,2)=6 */
+func combin {
+  para total,n;
+  
+  if (n>total) {return @;}
+  return factorial(total)/(factorial(n)*factorial(total-n));
+}
+
+/* ceiling returns the number rounded *up* to the nearest multiple of
+   significance, e.g ceiling(62,6)=66 */
+func ceiling {
+  para num, multiple;
+
+  /* i.e the case that matches mround() */
+  if (mround(num,multiple)>=((float(num)/multiple)*multiple)) {
+    return mround(num,multiple);
+  }
+
+  /* otherwise if mround rounds down, add the multiple to it */
+  return mround(num,multiple)+multiple;
+}
+
+
+/* floor returns the number rounded *down* to the nearest multiple of
+   significance, e.g floor(64,6)=60 */
+func floor {
+  para num, multiple;
+
+  /* i.e the case that matches mround() */
+  if (mround(num,multiple)<=((num/multiple)*multiple)) {
+    return mround(num,multiple);
+  }
+
+  /* otherwise if mround rounds down, add the multiple to it */
+  return mround(num,multiple)-multiple;
+}
+
+/* degrees takes an angle in radians and converts it to degrees, e.g
+   degrees(PI)=180 */
+func degrees {
+  para angleinradians;
+  return (angleinradians * (180/PI)) -
+    (trunc((angleinradians * (180/PI))/360)*360) ;
+}
+
+/* radians takes an angle in degrees and converts it to radians, e.g
+   radians(180)=3.14 etc */
+/*NOTE - see degrees for implementational issue */
+func radians {
+  para angleindegrees;
+  return (angleindegrees / (180/PI)) -
+    (trunc((angleindegrees / ((180/PI))/(2*PI)))*(2*PI));
+}
+
+/* rounddigits takes a number and rounds it to the number of digits
+   specified..  e.g round(123,2) = 120, round(123,1) = 100,
+   round(123.232,4)=123.2 */
+func rounddigits {
+  para num,digits;
+  auto intpart,fracpart,numdigits;
+  auto negative;
+
+  negative = sign(num);
+  if (sign(num)==-1) {num = -num;}
+
+  intpart = int(num);
+  fracpart = num-int(num);
+  numintdigits = ceiling(log10(num),1);
+
+  /* no fractional part - and more digits specified than in num, e.g
+     round(123,4)=123 */
+  if ((fracpart==0)&&(pow(10,digits-1)>num)) {return num*negative;}
+
+  /* if the number has a fractional part but the number of digits
+     required is less than this, i.e rounddigits(123.56767,2) we can
+     ignore the fraction. Note that we cannot ignore the fraction if
+     the same.. e.g rounddigits(123.8,3)=129... */
+  if (ceiling(log10(num),1)>digits) {num = int(num);}
+
+  if ((pow(10,digits-1) <= num) )
+  { /*i.e we are returning an integer */
+    if ((num % (int(pow(10,numintdigits-digits)))) <
+	(pow(10,numintdigits-digits)/2)) {
+      /* pow and % used to return the values */
+      return (num - num % (int(pow(10,numintdigits-digits))))*negative;
+    } else {
+      return (num - num % (int(pow(10,numintdigits-digits))) +
+	      pow(10,numintdigits-digits))*negative;
+    }
+  }
+
+  /* otherwise we've got a real number to deal with */
+
+  /* sorts out case when e.g rounddigits(123.8,3) or
+     rounddigits(1234.4,4).. */
+  if (ceiling(log10(num),1)==digits) {return round(num)*negative;}
+
+  /* otherwise the answer will also be a real number and we have a
+     real number.. */
+  return (intpart +round(fracpart*pow(10,digits-numintdigits))*
+	  (pow(10,-(digits-numintdigits))))*negative;  
+}
+
+/* more eden primitive functions - 2nd may 2002, chris roe */
+
+
+/* gcd takes numeric parameters and returns their greatest common
+   divisor. any number of numbers can be passed.. e.g gcd(2,6)=2,
+   gcd(6,9,24)=3, gcd(3,7,24,28)=1 */
+func gcd {
+  auto n1,n2,data,temp;
+
+  if (type($[1])=="list") {data = $[1];} else {data = $;}
+
+  while (data#>2) {
+    temp = gcd(data[1],data[2]);
+    data[2] = temp;
+    delete data,1;
+  }
+
+  n1 = data[1];
+  n2 = data[2];
+
+  /* now have 2 numbers.. n1 & n2.. can compute gcd directly */
+  /* use euclid's algorithm.. */
+
+  r = 1;
+  while (r>0) {
+    /* ensure n1>n2 by swapping if neccessary */
+    if (n2>n1) {temp = n2; n2 = n1; n1 = temp;}
+    r = n1 % n2;
+    if (r==0) {return n2;}
+    n1 = r;
+  }
+  return min(n1,n2);
+}
+
+/* lcm takes numeric parameters and returns the lowest common multiple
+   of them..  e.g lcm(8,12)=24, lcm(4,6,8)=24.  Note - use the fact
+   that gcd(a,b)*lcm(a,b)=a*b for all a and b integers... see maths
+   textbook for a proof!! */
+func lcm {
+  auto n1,n2,data,temp;
+
+  if (type($[1])=="list") {data = $[1];} else {data = $;}
+
+  while (data#>2) {
+    temp = lcm(data[1],data[2]);
+    data[2] = temp;
+    delete data,1;
+  }
+
+  n1 = data[1]; 
+  n2 = data[2];
+
+/* now assume have 2 numbers, n1 & n2.. can compute lcm directly */
+
+  return (n1*n2)/gcd(n1,n2);
+}
+
+/* variance takes and calculates the variance, i.e the sum of the
+   deviations between each element and the mean divided by the number
+   of data points. It can cope with either a number of numeric
+   parameters passed to it, or a list containing numbers...  e.g
+   variance(23,34,46,2343) or variance(b) where b=[432,43,56,78] etc */
+func variance {
+  auto avg,data,i,result;
+
+  if (type($[1])=="list") {data = $[1];} else {data = $;}
+
+  /* data now contains a list of numbers */
+
+  avg = average(data);
+
+
+  result = 0;
+
+  for (i=1; i<=data#; i++) 
+  {
+    result = result + ((data[i]-avg)*(data[i]-avg));
+  }
+  return float(result) / data#;
+}
+
+/* stdev takes a list of numbers or numeric parameters and returns the
+   standard deviation, or the square root of the variance... e.g
+   stdev(23,45,67) or stdev(b) where b=[3,4,5,9] */
+func stdev {
+  auto data;
+
+  if (type($[1])=="list") {data = $[1];} else {data = $;}
+
+  return sqrt(variance(data));
+}
+
+/* given a list of numbers, sorts them into ascending or descending
+   order... */
+/* uses bubble sort! improve sorting algorithm... */
+/* 1 = ascending, 2 = descending */
+func sort {
+  para l,dir;
+  auto i,j,result,temp,swap,ascending,descending;
+
+  ascending = 1;
+  descending = 2;
+
+  swap = 1;
+  while (swap>0) 
+  {    swap = 0;
+    for (i=1; i<=l#-1; i++) 
+    {
+      if ( ((dir==ascending)&&(l[i]>l[i+1])) || ((dir==descending)&&(l[i]<l[i+1])) )
+	{
+	  temp = l[i]; 
+	  l[i] = l[i+1]; 
+	  l[i+1] = temp;
+	  swap = 1;
+	}
+    }
+  }
+  return l;
+}
+
+
+/* median returns the median of a list of numbers which can be sorted
+   or unsorted. */
+func median {
+  para l;
+  auto sl;
+
+  sl = sort(l,1);
+  if (l#%2==1) 
+  {
+    /* an odd number of items .. */
+    return sl[(sl#+1)/2];
+  }
+  /* otherwise an even number of items .. */
+  return (sl[sl#/2]+sl[(sl#/2)+1])/2.0;
+}
+
+
+/* rnd will return a random number in the range between 0 and the
+   number specified as parameter. The range includes both 0 and number */
+func rnd {
+	para maxnum;
+        return int(realrand() * (maxnum+1));
+}
+    
+/* randomise will seed the random number generator with a random seed */
+proc randomise {
+        srand(gettime()[1]);
+}
+
+
+/* eden colour functions - to enable SCOUT and DoNaLD to use rgb
+   colour info instead of named colours. */
+func rgb2color {
+  para redval, greenval, blueval;
+  auto s, i;
+
+  /* check values are in allowable 0-255 range */
+  if ((redval<0)||(greenval<0)||(blueval<0)||
+      (redval>255)||(greenval>255)||(blueval>255))
+    error("colour out of range");
+
+  /* round to nearest integer - need to have each component as a
+     strict 2 +character length hex number - can't deal with real numbers
+     directly, and don't need to? */
+  redval = round(redval);
+  greenval = round(greenval);
+  blueval = round(blueval);
+
+  /* use the c func to get the string back */
+  s = "";
+  sprintf(s,"#%02x%02x%02x",redval,greenval,blueval);
+
+  return s;
+}
+
+/* English spelling of rgb2color */
+func rgb2colour { return apply(rgb2color, $); }
+
+
+
+
+/* Install the Eden Symbol Lists notation */
+proc installedensl {
+  include(getenv("TKEDEN_LIB")//"/edensl.eden");
+}
+
+
+
+/* Install the Arca notation */
+proc installarca {
+
+	if (weden_UsingWebEden == 1) {
+		
+		weden_SendEDENOutput("<b><item type=\"disabledcommand\"><edenname>installarca</edenname><reason code=\"3\">The Arca Notation is currently not supported by WebEDEN</reason></item></b>");
+  
+  	} else {
+  		include(getenv("TKEDEN_LIB")//"/arca.eden");
+		  /* I haven't decided the best way to set this up to distribute it to
+	    	 the PC platform etc.  [Ash, August 2002]
+		   */
+	  	installIPTrans("%arca", "/dcs/emp/empublic/bin/arca.trans");
+  	}
+}
+
+
+/* Install the Denota notation */
+proc installdenota {
+  auto d;
+
+	if (weden_UsingWebEden == 1) {
+	
+		weden_SendEDENOutput("<b><item type=\"disabledcommand\"><edenname>installdenota</edenname><reason code=\"3\">The Denota Notation is currently not supported by WebEDEN</reason></item></b>");
+	
+	} else {
+
+		d = cwd(); /* store the current working directory so we can restore it */
+		cd("/dcs/emp/empublic/projects/denotaMeziani1987/lib");
+		include("init.e");
+		cd(d);
+	
+		installIPTrans("%denota", "/dcs/emp/empublic/bin/denota");
+		
+	}
+}
+
+/* notations is a list of lists holding parameters required to
+   implement any notations using translators.  notations holds one
+   list per notation.  Each sublist contains three elements:
+
+     1: name of the notation (including initial '%' character)
+
+     2: pointer to the procedure to call when the user switches to
+     this notation.  No arguments are provided when this procedure is
+     called, but it may use the value of currentNotation to determine
+     which notation is in effect if this procedure is serving more
+     than one notation, for example.
+
+     3: pointer to the procedure to call when the user provides input
+     in this notation.  This "parseChar" procedure is called once for
+     each character provided, with the char as the sole argument.
+     This procedure is called one character at a time so that it can
+     implement any necessary form of blocking (eg parse one line at a
+     time, or parse one statement at a time, where statements are
+     ended with a ';').
+
+   currentNotation is an index into notations, or -1 meaning that the
+   current notation is implemented in some other way.
+*/
+
+notations = [];
+
+eden_debug_notations = 0;
+
+
+/* newNotation: call this with three parameters to install a new
+   notation or redefine an existing one.  Parameters are:
+
+   name: name of the new or existing notation, starting with the '%'
+   character
+
+   switchProcPtr: a pointer to the procedure to call when the user
+   switches to this notation.
+
+   transProcPtr: a pointer to the procedure to call when the user
+   provides input in this notation.
+
+   (see the comment for the "notations" list for more detail).
+
+   Returns the index into the notations list for this notation.
+
+*/
+proc newNotation {
+  para name, switchProcPtr, transProcPtr;
+  auto i, si;
+
+  if (name[1] != '%') error("notation names must start with %");
+
+  si = -1; /* searching index */
+  for (i = 1; i <= notations#; i++) {
+    if (name == notations[i][1]) {
+      si = i;
+      break;
+    }
+  }
+
+  if (si == -1) {
+    /* a new notation: add a dummy entry which will be overwritten below */
+    append notations, [1, 2, 3];
+    si = notations#;
+
+    /* add a radio button for the new notation, but not in ttyeden */
+	if (tcl != @) {
+	
+		if (weden_UsingWebEden == 1) {
+			weden_SendEDENOutput("<b><item type=\"notation\" operation=\"add\"><notationname>" // substr(name, 2, name#) // "</notationname></item></b>");
+		} else {
+			tcl("addNotationRadioButton " // substr(name, 2, name#));
+		}
+		
+	}
+  }
+
+  notations[si][1] = name;
+  notations[si][2] = switchProcPtr;
+  notations[si][3] = transProcPtr;
+
+  return si;
+}
+
+
+currentNotation = -1;
+
+/* notationSwitch: is called when the current notation is changed
+   using the % notation.  This is passed the string starting % which
+   describes the new notation.  It should return 1 if the new notation
+   is recognised and can be interpreted, 0 otherwise.  This is called
+   on every notation change, so the end of a block of script in a
+   certain notation can be detected by the call to notationSwitch into
+   the next notation at the end. */
+proc notationSwitch {
+	para name;
+	auto found, i, newLineIndex;
+
+	currentNotation = -1;
+
+	for (i = 1; i <= notations#; i++) {
+		if (name == notations[i][1]) {
+			currentNotation = i;
+
+			/* call setup procedure */
+			(*(notations[i][2]))();
+
+			break;
+		}
+	}
+
+	if (eden_debug_notations)
+		writeln("notationSwitch " // name // " = " // str(currentNotation));
+
+	
+	newLineIndex = indexof(name, "\n");
+	if (newLineIndex == -1) {
+		newLineIndex = indexof(name, "\r");
+	}
+	
+	if (weden_UsingWebEden == 1) {
+		if (newLineIndex == -1) {
+			weden_SendEDENOutput("<b><item type=\"notation\" operation=\"switch\"><notationname>" // substr(name, 2, name#) // "</notationname></item></b>");
+		} else {
+			weden_SendEDENOutput("<b><item type=\"notation\" operation=\"switch\"><notationname>" // substr(name, 2, newLineIndex) // "</notationname></item></b>");
+		}
+	}
+	
+	return (currentNotation != -1);
+}
+
+
+/* notationStack: Eden's execute() and include() commands cause the
+   Eden interpreter to interpret a string.  The string may contain a
+   notation switch command, but after the string has been interpreted,
+   the notation context is expected to be restored.  I originally
+   thought that the C "entryStack" structure in main.c was handling
+   this, but that code seems to be doing something more complex.  So,
+   here, I represent the stack of interpreter notation contexts in an
+   Eden list.  Each element is an index into the notations list.
+
+   The buffers of the current parser are not stored and restored.
+   This means that:
+
+   1) a parser cannot reenter itself during a call to its "parseChar"
+   function by using execute("%self\nstuff") or by include()-ing a
+   file which contains code written in the notation implemented by the
+   parser.
+
+   2) buffers should not be shared between notations.  Note the
+   implementation of the IP translator below, which holds a list of
+   buffers, one for each notation implemented.  Note the AOP
+   translator will probably not cope with a reentrant call as it uses
+   only one buffer (meaning that AOP-implemented notations cannot be
+   used within the implementation of another AOP notation).
+
+*/
+notationStack = [];
+
+/* notationPushPop: is called just before and just after another
+   instance of the Eden interpreter is started during a call to
+   execute() or include().  The procedure needs to push the current
+   notation context onto the notationStack just before the call, and
+   pop it off just after, and notationPushPop is passed "1" or "-1" to
+   indicate whether we are just before or just after respectively.  */
+proc notationPushPop {
+  para direction;
+
+  switch (direction) {
+  case "1":
+    insert notationStack, 1, currentNotation;
+    if (eden_debug_notations)
+      writeln("notationPushPop: PUSH " // str(currentNotation) // " NOW " //
+              str(notationStack));
+    break;
+
+  case "-1":
+    if (notationStack# <= 0) error("can't pop an empty notationStack");
+    currentNotation = notationStack[1];
+    delete notationStack, 1;
+    if (eden_debug_notations)
+      writeln("notationPushPop: POP " // str(currentNotation) // " NOW " //
+              str(notationStack));
+    break;
+
+  default:
+    error("bad direction " // direction // " passed to notationPushPop");
+  }
+}
+
+/* notationGet: called to obtain the name (including %) of the current
+   notation, for use in the prompt. */
+func notationGet {
+  if ((currentNotation == -1) || (currentNotation > notations#))
+    error("notationGet called when currentNotation is not set sensibly (" //
+          str(currentNotation) // ")");
+
+  return notations[currentNotation][1];
+}
+
+/* notationChar: when a recognised notation is being interpreted
+   (after notationSwitch has returned 1), this is given the script
+   text, one character at a time.  It should interpret the text,
+   possibly maintain internal state, and use "execute" to create Eden
+   state. */
+proc notationChar {
+  para c;
+  auto i;
+
+  if (eden_debug_notations)
+    writeln("notationChar " // c //
+            " (currentNotation = " // str(currentNotation) // ")");
+
+  if ((currentNotation == -1) || (currentNotation > notations#))
+    error("notationChar called when currentNotation is not set sensibly (" //
+          str(currentNotation) // ")");
+
+  /* call the current notation's parseChar procedure */
+  (*(notations[currentNotation][3]))(c);
+
+}
+
+
+/* IP (Interactive Process) -based translators */
+
+/* the indexes in iptfds and iptbufs should correspond to the
+   notations list, so blank entries will be required if there are
+   non-IP notations present. */
+iptfds = [];
+iptbufs = [];
+
+proc ipTransSwitch {
+  /* this should actually be unnecessary as it isn't possible to
+     change notations without using a line feed, and so the previous
+     ipParseChar should have cleared the buffer already.  We'll do it
+     for safety anyway. */
+  iptbufs[currentNotation] = "";
+}
+
+proc ipTransParseChar {
+  para c;
+  auto l, r, w, e;
+
+  if ((currentNotation < 1) || (currentNotation > iptfds#))
+    error("ipParseChar called when a non-IP notation is in effect");
+
+  l = iptfds[currentNotation];
+
+  if (l# != 3)
+    error("wrong number of fds in iptfds for " //
+	  notations[currentNotation] // " notation " //
+	  "- was the IP translator opened?");
+
+  r = l[1]; w = l[2]; e = l[3];
+
+  iptbufs[currentNotation] = iptbufs[currentNotation] // c;
+
+  if (c == '\n') {
+    rawwrite(w, iptbufs[currentNotation]);
+
+    out = "";
+    /* have to pause for a short while even if there appears to be no input
+       as the concurrent translator might just be being slow -- there is no
+       way of telling when the current input has finished (hand shaking) in
+       this simple scheme */
+    while (fdready(r, 'r', [1, 0])) {
+      out = out // rawread(r, 255);
+    }
+
+    if (fdready(e, 'r', [0, 0])) {
+      error("<" // rawread(e, 255) // ">");
+    }
+
+    if (eden_debug_notations)
+      writeln("<" // notations[currentNotation][1] // ": " // out // ">");
+    execute(out);
+
+    iptbufs[currentNotation] = "";
+  }
+
+}
+
+/* installIPTrans: call this to install an Interactive Process -based
+   translator.  Two arguments are required:
+
+   name: name of the new notation, starting with the '%' character.
+   This procedure should be able to cope with a change to an existing
+   ip-based translator, but I doubt it does correctly at present.
+
+   path: complete path to the external translator program which will
+   be started up as a concurrent interactive process.  User input in
+   this new notation will be given to stdin of the process.  Output
+   from the process on stdout should be Eden code, which will be
+   execute()'d.  Output from the process on stderr is assumed to be an
+   error message, which will have the same effect as normal errors.
+*/
+proc installIPTrans {
+  para name, path;
+  auto ni;
+
+  ni = newNotation(name, &ipTransSwitch, &ipTransParseChar);
+
+  while (ni > iptfds#) append iptfds, "";
+  while (ni > iptbufs#) append iptbufs, "";
+
+  iptfds[ni] = ipopen(path, basename(path));
+  iptbufs[ni] = "";
+}
+
+
+/* Agent-oriented parser (AOP) */
+
+include(getenv("TKEDEN_LIB")//"/aop.eden");
+
+
+/* remove a radio button for the new notation, but not in ttyeden.
+   Pass the name of a notation, including the initial % character. */
+proc removeNotationRadioButton {
+  para name;
+
+  if (name[1] != '%')
+    error("removeNotationRadioButton should be passed a string starting with %");
+
+	if (tcl != @) {
+	
+		if (weden_UsingWebEden == 1) {
+			weden_SendEDENOutput("<b><item type=\"notation\" operation=\"remove\"><notationname>" // substr(name, 2, name#) // "</notationname></item></b>");
+		} else {
+			tcl("removeNotationRadioButton " // substr(name, 2, name#));
+		}
+		
+	}
+
+}
+
+
+/* FALSE and TRUE were originally part of donald.eden, but people expect them
+   to be a part of Eden... */
+FALSE	= 0;
+TRUE	= 1;
+
+
+/* Public */
+eden_debug_edenclocks = 0;
+
+/* Private: list of tokens returned from createtimer.  A token
+   with index i in this list is associated with edenclocks[i].  */
+edenclocktokens = [];
+
+/* Private: list of absolute real times when each edenclock was called.
+   Only used if eden_debug_edenclocks=1, in order to show real clock times */
+edenclockftimes = [];
+
+/* Private: this is called to start timer events for a particular edenclock
+   and it schedules itself to be called again at the appropriate time (when
+   it will then reschedule itself again).  clockPtr parameter is a pointer to
+   an edenclock variable, the timing details of which should exist in the 
+   edenclocks list.  Eg if this is passed &b, edenclocks should contain (eg)
+   the tuple [&b, 200].  The parameter is the name rather than an index into
+   the edenclocks list as the edenclocks list may have had additions/deletions
+   (changing indices) by the time this proc gets to see it. */
+proc edenclock {
+  para clockPtr;
+  auto i, fi, ft, millis, t;
+  
+  if (($# != 1) || (type($1) != "pointer"))
+    error("edenclock (internal) requires a single, pointer argument");
+  
+  fi = 0; /* "found index" */
+  for (i = 1; i <= edenclocks#; i++) {
+    if (edenclocks[i][1] == clockPtr)
+      fi = i;
+  }
+  
+  if (fi == 0) {
+    /* can't locate the clockPtr in the edenclocks list: just silently ignore
+       this since presumably it was just removed. */
+    return;
+  }
+
+  millis = edenclocks[fi][2];
+  
+  if (millis == @) {
+    /* This is the @ 'pause' case.  Don't increment the edenclock variable
+       and don't reschedule this proc. */
+    return;
+  }
+  
+  /* increment the edenclock variable */
+  t = type(*clockPtr);
+  if (t != "int") {
+    edenclocks[fi][2] = @;
+    error("edenclock variable " // nameof(clockPtr) // " must be type int," //
+          "but is type " // t // "." //
+          "  Paused " // nameof(clockPtr) // " edenclock.");
+  } else {
+    (*clockPtr)++;
+  }
+
+  if (eden_debug_edenclocks) {
+    ft = ftime();
+    write("edenclock: inc " // str(clockPtr) //
+              ": now " // str(*clockPtr) //
+              " after " // str((ft[1] - edenclockftimes[fi][1]) * 1000
+                             + (ft[2] - edenclockftimes[fi][2])) //
+                           " millis," //
+              " scheduling in " // str(millis));
+    edenclockftimes[fi] = ft;
+  }
+  
+  /* Arrange for this proc to be called again. */
+  if (millis == 0) {
+    /* This is the 0 'as fast as possible' case.  The Tcl timers don't seem
+       to produce the behaviour we want when a timing of 0 is given (and
+       thus the C builtin prevents us from choosing this case).  Instead,
+       reschedule this proc to be called as soon as possible (ie timing not
+       related to real time) using todo(). */
+    todo("edenclock(&" // nameof(clockPtr) // ");");
+
+    if (eden_debug_edenclocks)
+      writeln(" token n/a");
+
+  } else {
+    /* Reschedule this proc to be called after 'millis' milliseconds.
+       Record the timer token so that the timer event can be cancelled by
+       edenclocksUpdateTimers if necessary. */
+    if (createtimer == @)
+      error("createtimer is not defined (expecting a built-in): if this" //
+               " is ttyeden, edenclocks are not available there presently");
+
+    edenclocktokens[fi] =
+      createtimer("edenclock(&" // nameof(clockPtr) // ");",
+                            millis);
+
+    if (eden_debug_edenclocks)
+      writeln(" token " // str(edenclocktokens[fi]));
+  }
+}
+
+/* Private: previous value of edenclocks -- used to detect specific changes
+   to edenclocks */
+edenclocksold = @;
+
+/* Public: List of tuples describing integer variables that should be
+   automatically incremented at a given time interval.  Each element in
+   the edenclocks list is itself a list, in the form [clockPtr, millis].
+   'clockPtr' should be a pointer to an integer variable which will then 
+   be incremented every 'millis' milliseconds.  There are two possible
+   special values for 'millis':
+     @ - "pause" this clock: don't increment.  Enables a record of a clock
+           variable to be left in the edenclocks list but temporarily
+           disabled.
+     0 - increment this clock as fast as possible.  This enables the commonly
+           used pattern 'proc p { foo(); todo("p();"); }' to become
+           'proc p : tick { foo(); }; startedenclock(&tick, 0);'.
+   Eg: 'edenclocks=[[&a, 1000], [&b, 2500], [&tick, 0]];' causes 'a' to be
+   incremented once per second, 'b' to be incremented every 2.5 seconds, and
+   'tick' to be incremented as fast as possible.  The edenclocks list can be
+   changed manually or by using the startedenclock and stopedenclock helper
+   procs provided. */
+edenclocks = @;
+
+/* Private: implement the automated timed changes required by the edenclocks
+   list.  This procedure must look for /changes/ to the edenclocks list and
+   set up and remove timers appropriately. */
+proc edenclocksUpdateTimers : edenclocks {
+  auto newi, oldi, exists;
+
+  if ($# != 0)
+    error("edenclocksUpdateTimers (internal) requires zero arguments");
+
+  if (edenclocks == @)
+    return;
+
+  /* Iterate through sorted versions of new and old edenclocks lists to
+     determine additions and deletions of tuples and changes to 'millis' values
+     (NB a change to a clockPtr value constitutes a deletion and an addition).
+     
+     There might be a cleverer, more efficient way to do this that doesn't
+     involve iterating through the old and new lists twice, but I don't
+     have the brains for that right now... and this is only called quite
+     rarely -- only when someone changes the timer setup, not on each timer
+     event.
+   */
+
+  /* Look for additions by looking for each current item in the old list. */
+  for (newi = 1; newi <= edenclocks#; newi++) {
+    /* does new[i] exist in old? */
+    exists = 0;
+    for (oldi = 1; oldi <= edenclocksold#; oldi++) {
+      if (edenclocks[newi][1] == edenclocksold[oldi][1]) {
+        exists = 1;
+        break;
+      }
+    }
+
+    if (exists) {
+      /* new[i] exists in old -- NO ADDITION OR DELETION to this tuple
+         (but possibly a move of index): deal with possible change to 
+         'millis' value */
+      if (eden_debug_edenclocks)
+        write("no addition/deletion of " // str(edenclocks[newi][1]) // ":");
+      
+      if (edenclocks[newi][2] == edenclocksold[oldi][2]) {
+        /* The value of 'millis' has not changed -- do nothing */
+        if (eden_debug_edenclocks)
+          writeln(" 'millis' remain at " // str(edenclocks[newi][2]));
+
+      } else {
+        /* CHANGE to 'millis': remove old timer, then start a new timer with
+           the new 'millis' value.  The @ 'pause' and 0 'as fast as possible'
+           cases will be handled by the edenclock proc. */
+        if (eden_debug_edenclocks)
+          writeln(" 'millis' changed to " // str(edenclocks[newi][2]));
+        
+        if (edenclocksold[oldi][2] == 0) {
+          /* 'millis' was 0: there is no timer event scheduled for this
+             eden clock at the moment, but there is still an 
+             edenclock(thisClockPtr) on the todo queue.  Don't call edenclock
+             again here because this will start another instance of it and
+             we'll end up with two instances of edenclock(thisClockPtr)
+             running together.  Instead, let the existing instance in the
+             todo() queue reschedule itself with the new value of 'millis'
+             when it executes in the next RunSet.  Ie, do nothing. */
+          if (eden_debug_edenclocks)
+            writeln("millis was 0");
+
+        } else {
+          if (eden_debug_edenclocks)
+            writeln("removing timer token " // str(edenclocktokens[oldi]));
+          deletetimer(edenclocktokens[oldi]);
+          edenclock(edenclocks[newi][1]);
+          
+        }
+        
+      }
+
+    } else {
+      /* new[i] does not exist in old -- ADDITION of new[i] */
+      if (eden_debug_edenclocks)
+        writeln("addition of " // str(edenclocks[newi][1]));
+
+      /* insert placeholders for the token and (only used when
+         eden_debug_edenclocks=1) ftime value so that the indices of these
+         lists correspond with the edenclocks list: edenclock will overwrite
+         with values */
+      insert edenclocktokens, newi, @;
+      insert edenclockftimes, newi, ftime();
+
+      /* initialise the clock value to 0 if it hasn't been given a value yet */      
+      if ((*(edenclocks[newi][1])) == @) (*(edenclocks[newi][1])) = 0;
+      
+      /* Start timer.  The @ 'pause' and 0 'as fast as possible' cases will
+         be handled by the edenclock proc. */
+      edenclock(edenclocks[newi][1]);
+    }
+  }
+
+  /* Look for deletions by looking for each old item in the current list.
+     Must look from end of list towards beginning as we are using the
+     'delete' command below, which causes indexes of elements /after/ the
+     deletion to be invalid... this is important if more than one edenclock
+     is removed simultaneously, eg a change from
+     edenclocks=[[&a,1000],[&b,2000]]; to edenclocks=[]; */
+  for (oldi = edenclocksold#; oldi >= 1; oldi--) {
+    /* does old[i] exist in new? */
+    exists = 0;
+    for (newi = 1; newi <= edenclocks#; newi++) {
+      if (edenclocksold[oldi][1] == edenclocks[newi][1]) {
+        exists = 1;
+        break;
+      }
+    }
+    
+    if (exists) {
+      /* old[i] exists in new -- NO ADDITION OR DELETION: but this case is
+         dealt with above: do nothing*/
+
+    } else {
+      /* old[i] does not exist in new -- DELETION of old[i] */
+      if (eden_debug_edenclocks)
+        writeln("deletion of " // str(edenclocksold[oldi][1]));
+
+      /* stop timer */
+      deletetimer(edenclocktokens[oldi]);
+      
+      /* keep edenclocktokens and edenftimes lists consistent with
+         edenclocks list */
+      delete edenclocktokens, oldi;
+      delete edenclockftimes, oldi;
+    }
+  }
+
+  edenclocksold = edenclocks;
+}
+
+/* Public: A helper procedure for introducing a new edenclock or modifying
+   an existing one. */
+proc setedenclock {
+  para clockPtr, millis;
+  auto i, fi;
+  
+  if ($# != 2)
+    error("two arguments required for setedenclock: got " // str($#));
+  if (type(clockPtr) != "pointer")
+    error("first argument for setedenclock must be a pointer: got " // type(clockPtr));
+  if ((type(millis) != "int") && (millis != @))
+    error("second argument for setedenclock must be an integer or undefined:" //
+            " got " // type(millis));
+
+  if (edenclocks == @)
+    edenclocks = [];
+  
+  fi = 0; /* "found index" */
+  for (i = 1; i <= edenclocks#; i++) {
+    if (edenclocks[i][1] == clockPtr)
+      fi = i;
+  }
+
+	/* Maximum update time for an eden clock is 200ms. If user sets any faster then we
+	   set the time to be 200 and issue a warning */
+	if (weden_UsingWebEden == 1) {
+		
+		if (int(millis) < 200) {
+			millis = 200;
+			notice("Quickest edenclock update period is 200ms when using Web EDEN. Therefore the edenclock has been set to run every 200ms.");
+		}
+	}
+
+  if (fi == 0) {
+    /* this edenclock doesn't exist already: add it */
+    append edenclocks, [clockPtr, millis];
+    
+  } else {
+    /* this edenclock already exists: modify it */
+    edenclocks[fi] = [clockPtr, millis];
+    
+  }
+}
+
+/* Public: A helper procedure for removing an existing edenclock */
+proc removeedenclock {
+  para clockPtr;
+  auto i, fi;
+  
+  if ($# != 1)
+    error("single argument for removeedenclock required: got " // str($#));
+  if (type(clockPtr) != "pointer")
+    error("first argument for removeedenclock must be a pointer: got " //
+            type(clockPtr));
+
+  fi = 0; /* "found index" */
+  for (i = 1; i <= edenclocks#; i++) {
+    if (edenclocks[i][1] == clockPtr)
+      fi = i;
+  }
+
+  if (fi == 0) error("can't locate " // str(clockPtr) // " in edenclocks list");
+
+  delete edenclocks, fi;
+}
+
+/* Private */
+edenclocksprepause = [];
+
+/* Public: Temporarily pause all edenclocks */
+proc pauseedenclocks {
+  auto i;
+
+  if ($# != 0)
+    error("zero arguments required for pauseedenclocks: got " // str($#));
+
+  edenclocksprepause = edenclocks;
+  
+  for (i = 1; i <= edenclocks#; i++) {
+    edenclocks[i][2] = @;
+  }
+}
+
+/* Public: Continue after having paused edenclocks.  (Note that each clock will
+   be restarted at roughly the same instant so the phase relationships
+   between each will not be the same as before the pause.) */
+proc unpauseedenclocks {
+  if ($# != 0)
+    error("zero arguments required for unpauseedenclocks: got " // str($#));
+
+  edenclocks = edenclocksprepause;
+}
+
+
+/* Private: This is called after the Interrupt button / ctrl-c is pressed. */
+proc edeninterrupted {
+  /* Could just say 'edenclocks=[];' but want to handle this without invoking
+     edenclocksUpdateTimers to simplify things as much as possible. */
+  writeln("edeninterrupted: deleting all timers -- use unpauseedenclocks() to restore");
+  deletealltimers();
+  edenclocksprepause = edenclocks;
+  edenclocksold = @;
+  edenclocks = @;
+
+  if (type(edeninterruptedhook) == "proc")
+    edeninterruptedhook();
+}
+
+
+/* Public: If you are writing a model and want something to happen after the
+   Interrupt button / ctrl-c are pressed, write a procedure named
+   'edeninterruptedhook' and it will be called by 'edeninterrupted' (which
+   should not be modified by models) in this case. */
+##proc edeninterruptedhook {
+##}
+
+
+proc installangel {
+  auto curdir;
+  curdir = cwd();
+  cd(getenv("TKEDEN_LIB")//"/gel");
+  include("run.e");
+  cd(curdir);
+}
+
+proc installdoste {
+  include(getenv("TKEDEN_LIB")//"/doste.e");
+}
+
+installdoste();

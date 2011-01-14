@@ -1,0 +1,100 @@
+/*
+ * $Id$
+ */
+
+/* sasami.eden */
+
+sasami_display_open = 0;
+sasami_camera_rotthentrans = 0;
+
+proc sasami_camera_reset {
+  /* stored as lists to enable simultaneous atomic access to all
+     3 elements */
+  sasami_camera_pos = [0, 0, -30];
+  sasami_camera_rot = [0, 0, 0];
+  sasami_camera_scale = [10, 10, 10];
+
+  sasami_camera_frustum_left = -1;
+  sasami_camera_frustum_right = 1;
+  /* hack: I haven't exposed the viewport size as Eden variables yet */
+  sasami_camera_frustum_bottom = -(640/480); /* don't know why in integer */
+  sasami_camera_frustum_top = 640/480;
+
+  /* apparently this mustn't be set too small or the Z buffer
+     resolution starts to go */
+  sasami_camera_frustum_near = 10.0;
+
+  sasami_camera_frustum_far = 40000.0;
+}
+
+sasami_camera_reset();
+
+proc sasami_propagate_camera_pos : sasami_camera_pos {
+  if (~sasami_display_open) {
+    tcl(".sasami.f.togl setXpos " // str(sasami_camera_pos[1]));
+    tcl(".sasami.f.togl setYpos " // str(sasami_camera_pos[2]));
+    tcl(".sasami.f.togl setZpos " // str(sasami_camera_pos[3]));
+  }
+}
+
+proc sasami_propagate_camera_rot : sasami_camera_rot {
+  if (~sasami_display_open) {
+    tcl(".sasami.f.togl setXrot " // str(sasami_camera_rot[1]));
+    tcl(".sasami.f.togl setYrot " // str(sasami_camera_rot[2]));
+    tcl(".sasami.f.togl setZrot " // str(sasami_camera_rot[3]));
+  }
+}
+
+proc sasami_progagate_camera_scale : sasami_camera_scale {
+  if (~sasami_display_open) {
+    tcl(".sasami.f.togl setXscale " // str(sasami_camera_scale[1]));
+    tcl(".sasami.f.togl setYscale " // str(sasami_camera_scale[2]));
+    tcl(".sasami.f.togl setZscale " // str(sasami_camera_scale[3]));
+  }
+}
+
+proc sasami_propagate_camera_rotthentrans : sasami_camera_rotthentrans {
+  if (~sasami_display_open) {
+    tcl(".sasami.f.togl setRotThenTrans " // str(sasami_camera_rotthentrans));
+  }
+}
+
+sasami_camera is [sasami_camera_pos, sasami_camera_rot, sasami_camera_scale,
+                  sasami_camera_rotthentrans];
+
+proc sasami_render : sasami_camera {
+  if (~sasami_display_open)
+    tcl(".sasami.f.togl render");
+}
+
+sasami_camera_frustum is [sasami_camera_frustum_left,
+                          sasami_camera_frustum_right,
+                          sasami_camera_frustum_bottom,
+                          sasami_camera_frustum_top,
+                          sasami_camera_frustum_near,
+                          sasami_camera_frustum_far];
+
+proc sasami_propagate_camera_frustum : sasami_camera_frustum {
+  if (~sasami_display_open) {
+    tcl(".sasami.f.togl setFrustumLeft " // str(sasami_camera_frustum_left));
+    tcl(".sasami.f.togl setFrustumRight " // str(sasami_camera_frustum_right));
+    tcl(".sasami.f.togl setFrustumBottom " // str(sasami_camera_frustum_bottom));
+    tcl(".sasami.f.togl setFrustumTop " // str(sasami_camera_frustum_top));
+    tcl(".sasami.f.togl setFrustumNear " // str(sasami_camera_frustum_near));
+    tcl(".sasami.f.togl setFrustumFar " // str(sasami_camera_frustum_far));
+    tcl(".sasami.f.togl render");
+  }
+}
+
+
+/* Convenience procedures for use by Tcl */
+proc sasami_change_camera_pos {
+  ~sasami_camera_pos = [sasami_camera_pos[1] + $1,
+                        sasami_camera_pos[2] + $2,
+                        sasami_camera_pos[3] + $3];
+}
+proc sasami_change_camera_rot {
+  ~sasami_camera_rot = [sasami_camera_rot[1] + $1,
+                        sasami_camera_rot[2] + $2,
+                        sasami_camera_rot[3] + $3];
+}

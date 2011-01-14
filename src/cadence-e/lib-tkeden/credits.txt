@@ -1,0 +1,88 @@
+Eden: the Evaluator of DEfinitive Notations
+
+Copyright (c) 1987-2004 The University of Warwick.  All rights reserved.
+
+Authors:
+  Meurig Beynon         1987-      (Supervision, EDDI development 2001-)
+  Yun Wai (Edward) Yung 1987-1990  (Eden, Eden handbook, %donald)
+  Yun Pui (Simon) Yung  1990-1996  (EX, xeden, ceden, heden, %scout, tkeden,
+                                    ~wmb/public DCS installation)
+  Son V Truong          1996       (EDDI design and Eden functions)
+  Pi-Hwa (Patrick) Sun  1997?-1999 (dtkeden, virtual agency, VB-like features)
+  Richard Cartwright    1997?      (Initial work on PC port, Linux port,
+                                    bug fixes, dtkeden documentation)
+  Amanda Wright         1997?      (Initial work on PC port)
+  Ben Carter            1999-2000  (Full tkeden PC port, %sasami on PC)
+  Ashley Ward           1999-      (Rationalisation, 'configure' build system,
+                                    %sasami on UNIX, many bug fixes,
+                                    interface improvements, Mac OS X port,
+                                    generalised notations framework, %edensl,
+                                    ~empublic DCS installation, many
+                                    incremental improvements, teeth
+                                    gnashing...)
+  Chris Brown	        2001       (Observation-oriented parser, EDDI parser)
+  Chris Roe             2001-2002  (Eden spreadsheet functions,
+                                    Donald improvements)
+
+Also many thanks to many other unnamed people (mostly students at Warwick)
+who have contributed time and effort to this project in numerous ways over
+the years: by constructing models, reporting bugs, contributing code,
+writing on the subject, participating in seminars etc.
+
+Certain variants of Eden use some of these libraries:
+  Tcl/Tk, originally by John Ousterhout
+    http://tcl.activestate.com
+  cygwin by Steve Chamberlain and many others
+    http://www.cygwin.com
+  readline, maintained by Chet Ramey
+    http://cnswww.cns.cwru.edu/~chet/readline/rltop.html
+  Togl by Brian Paul and Ben Bederson
+    http://togl.sourceforge.net/
+  GLpng by Ben Wyatt
+    http://www.wyatt100.freeserve.co.uk/download.htm
+  libpng by Greg Roelofs
+    http://www.libpng.org/pub/png
+  libz by Jean-loup Gailly and Mark Adler
+    http://www.zlib.org/
+  ncurses by Zeyd Ben-Halim, Eric S. Raymond and others
+    http://www.clark.net/pub/dickey/ncurses/ncurses.html
+  Tk Img package by Jan Nijtmans
+    http://members1.chello.nl/~j.nijtmans/img.html
+  PCRE (Perl Compatible Regular Expressions) by Philip Hazel
+    http://www.pcre.org/ ("Regular expression support is provided
+    by the PCRE library package, which is open source software,
+    written by Philip Hazel, and copyright by the University of
+    Cambridge, England.")
+
+This software is provided "as is", and no warranty, express or implied, is
+given. Neither the author nor the University of Warwick takes any
+responsibility whatsoever for any use or misuse of this software, or any
+damage created by its use or misuse.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+Permission to use, copy, modify, and distribute this software and
+documentation for non-commercial purposes and without fee is hereby
+granted, provided that the University of Warwick copyright notices and
+this permission notice appear in all copies.  Neither the author nor
+The University of Warwick makes any representations about the
+suitability of this software and documentation for any purpose.  It is
+provided ``as is'' without express or implied warranty.  Commercial
+use of this software requires specific permission from the University
+of Warwick; contact the Empirical Modelling project through the web
+pages at http://www.dcs.warwick.ac.uk/modelling/ or by snail mail at
+The Empirical Modelling Project, Department of Computer Science,
+University of Warwick, Coventry, CV4 7AL, UK for further information.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA

@@ -1,0 +1,9 @@
+#
+# $Id: Makefile.in,v 1.4 2001/07/27 16:22:10 cssbz Exp $
+#
+
+SOURCES = parser.c functions.c utils.c structures.c render.c togl.c glpng.c
+
+LIB = libsasami.a
+
+include ../generic.mk
