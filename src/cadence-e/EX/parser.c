@@ -21,7 +21,7 @@
 
 static char rcsid[] = "$Id: parser.c,v 1.14 2001/09/27 14:07:23 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

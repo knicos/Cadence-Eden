@@ -21,7 +21,7 @@
 
 static char rcsid[] = "$Id: check.c,v 1.11 2002/07/10 19:20:26 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "error.h"
 #include "oper.h"
 #include "tree.h"

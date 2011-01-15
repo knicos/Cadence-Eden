@@ -21,7 +21,7 @@
 // parser.c - Sasami parser - takes Sasami statements and outputs EDEN code
 // --------------------------------------------------------------------------
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #ifdef WANT_SASAMI
 

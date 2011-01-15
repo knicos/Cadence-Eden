@@ -21,7 +21,7 @@
 
 static char rcsid5[] = "$Id: agency.q.c,v 1.6 2001/07/27 17:09:09 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #define EQUAL_agent(A,B)	streq(A.name,B.name)
 #define FREE_agent(A)		if(A.name)free(A.name)

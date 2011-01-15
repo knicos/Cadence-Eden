@@ -25,7 +25,7 @@ static char rcsid[] = "$Id: runset.c,v 1.9 2001/12/06 22:48:41 cssbz Exp $";
 #include <string.h>
 #include <assert.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "runset.h"
 #include "eden.h"
 

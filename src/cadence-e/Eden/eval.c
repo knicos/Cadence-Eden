@@ -23,7 +23,7 @@ static char rcsid[] = "$Id: eval.c,v 1.12 2002/02/18 19:27:11 cssbz Exp $";
 
 #include <stdio.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "eden.h"
 #include "yacc.h"
 

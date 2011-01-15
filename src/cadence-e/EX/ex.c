@@ -39,7 +39,7 @@ static char rcsid[] = "$Id: ex.c,v 1.26 2002/02/27 16:31:55 cssbz Exp $";
 
 #include <unistd.h>		/* for exec...() */
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "../Eden/notation.h"
 #include "../Eden/eden.h"
 #include "../version.h"

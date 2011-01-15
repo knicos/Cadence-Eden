@@ -21,7 +21,7 @@
 
 static char rcsid[] = "$Id: store.c,v 1.11 2001/07/27 17:00:29 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #include <stdio.h>
 #include <string.h> // [Richard] : For strlen() etc...

@@ -24,7 +24,7 @@ char *alloca ();
 
 static char rcsid[] = "$Id: parser.y,v 1.16 2001/12/06 22:27:37 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #include <stdio.h>
 #include <stdlib.h>

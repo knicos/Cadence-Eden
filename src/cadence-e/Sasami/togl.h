@@ -10,7 +10,7 @@
  */
 
 /* ADDED BY ASH - START */
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #ifdef WANT_SASAMI
 

@@ -10,7 +10,7 @@ static char rcsid[] = "$Id: custom.c,v 1.8 2001/07/27 16:44:15 cssbz Exp $";
 
 #include <stdio.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "../Eden/eden.h"
 #include "../Eden/yacc.h"
 #include "custom.h"

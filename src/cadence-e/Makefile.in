@@ -20,7 +20,7 @@ TK_LIB		= @TK_LIB@
 CURSES_LIB	= @CURSES_LIB@
 CURSES_LIB_PATH	= @CURSES_LIB_PATH@
 READLINE_LIB	= @READLINE_LIB@
-LIBS		= @LIBS@
+LIBS		= @LIBS@ -lpcre
 X_PRE_LIBS	= @X_PRE_LIBS@
 X_LIBS		= @X_LIBS@
 X_EXTRA_LIBS	= @X_EXTRA_LIBS@
@@ -42,7 +42,7 @@ ICON_OBJS = @ICON_OBJS@
 # any of our settings
 ALLCFLAGS = $(CFLAGS)
 
-EDENOBJS = Eden/libeden.a pcre-3.9/pcre.o
+EDENOBJS = Eden/libeden.a
 MISCOBJS = Misc/libmisc.a
 DONALDOBJS = Donald/libdonald.a
 EXOBJS = EX/libex.a

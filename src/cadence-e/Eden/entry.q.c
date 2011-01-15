@@ -21,7 +21,7 @@
 
 static char rcsid4[] = "$Id: entry.q.c,v 1.10 2001/07/27 17:28:43 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "entry.q.h"
 
 /* function prototypes */

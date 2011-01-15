@@ -4,13 +4,13 @@ CC=@CC@
 CPP=@CXX@
 AR=ar
 CPPFLAGS=@CXXFLAGS@
-LDFLAGS=@LDFLAGS@ -L@prefix@/lib -ltk -ltcl -lGL -L/usr/lib64 -lSM -lICE -lpng -lXt -lX11 -lXmu -lXext  -lcadence -lGL -ldl -lm
+LDFLAGS=@LDFLAGS@ -L@prefix@/lib -ltk -ltcl -lGL -L/usr/lib64 -lSM -lICE -lpng -lXt -lX11 -lXmu -lXext  -lcadence -lGL -ldl -lm -lpcre
 INCLUDES=-I@top_srcdir@/libcadence/include -I@top_builddir@/libcadence/include
 
 SOURCES=eden.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 LIB=libcadence_eden.so
-EDENOBJS = cadence-e/Eden/libeden.a cadence-e/pcre-3.9/pcre.o
+EDENOBJS = cadence-e/Eden/libeden.a
 MISCOBJS = cadence-e/Misc/libmisc.a
 DONALDOBJS = cadence-e/Donald/libdonald.a
 EXOBJS = cadence-e/EX/libex.a

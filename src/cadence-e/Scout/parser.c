@@ -145,7 +145,7 @@ static char rcsid[] = "$Id: parser.y,v 1.16 2001/08/02 16:26:11 cssbz Exp $";
 #include <stdio.h>
 #include <string.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "symbol.h"
 #include "tree.h"
 #include "../Eden/error.h"

@@ -21,7 +21,7 @@
 
 static char rcsid2[] = "$Id: global.q.c,v 1.8 2001/07/27 17:31:17 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "global.q.h"
 
 /* function prototypes */

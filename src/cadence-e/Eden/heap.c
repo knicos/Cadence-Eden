@@ -25,7 +25,7 @@ static char rcsid[] = "$Id: heap.c,v 1.10 2001/07/27 17:32:20 cssbz Exp $";
  *	HEAP MEMORY MANAGER      *
  *********************************/
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #include "eden.h"
 

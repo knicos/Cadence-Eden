@@ -9,7 +9,7 @@
 
 #AC_PREREQ(2.59)
 AC_INIT(Cadence, 1.1)
-AC_CONFIG_SRCDIR(loader/linux.cpp)
+AC_CONFIG_SRCDIR(src/eden.cpp.in)
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADER(config.h)
 

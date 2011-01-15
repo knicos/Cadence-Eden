@@ -34,7 +34,7 @@ static char rcsid[] = "$Id: builtin.c,v 1.47 2002/07/10 19:22:18 cssbz Exp $";
 #include <assert.h>
 #include <stdarg.h>		// For custom formatting for debugMessage() and 
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "eden.h"
 #include "machine.h"
 #include "builtin.h"
@@ -3789,7 +3789,8 @@ int viewOptions(ClientData clientData, Tcl_Interp * interp, int argc, char *argv
 	}
 #endif
 
-#include "../pcre-3.9/pcre.h"
+#include <pcre.h>
+//#include "../pcre-3.9/pcre.h"
 	void regmatch(void)
 	{
 		pcre *re;

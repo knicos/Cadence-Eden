@@ -23,7 +23,7 @@
 // structures.c - This contains various global Sasami structure functions
 // --------------------------------------------------------------------------
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #ifdef WANT_SASAMI
 

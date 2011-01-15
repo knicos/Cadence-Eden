@@ -21,7 +21,7 @@
 
 static char rcsid3[] = "$Id: symptr.q.c,v 1.8 2001/07/27 17:57:16 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "symptr.q.h"
 
 /* This function has highly concealed semantics.  Note particularly

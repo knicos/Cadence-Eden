@@ -29,7 +29,7 @@ static char rcsid[] = "$Id: symbol.c,v 1.11 2001/07/27 17:56:37 cssbz Exp $";
 #include <stdlib.h>
 #include <string.h> // [Richard] : For strlen() etc...
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "eden.h"
 #include "yacc.h"
 #include "symptr.q.c"		/* some of the code is used by other

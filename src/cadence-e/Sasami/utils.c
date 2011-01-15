@@ -21,7 +21,7 @@
 // utils.c - This contains various Sasami utility functions
 // --------------------------------------------------------------------------
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #ifdef WANT_SASAMI
 

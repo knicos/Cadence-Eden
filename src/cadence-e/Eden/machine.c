@@ -32,7 +32,7 @@ static char rcsid[] = "$Id: machine.c,v 1.22 2002/07/10 19:24:49 cssbz Exp $";
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "eden.h"
 #include "yacc.h"
 

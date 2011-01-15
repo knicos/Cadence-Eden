@@ -28,7 +28,7 @@ static char rcsid[] = "$Id: type.c,v 1.19 2001/12/06 22:50:22 cssbz Exp $";
 #include <stdlib.h>
 #include <string.h>	// [Richard] : For strlen() etc..
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "eden.h"
 #include "builtin.h"
 #include "yacc.h"

@@ -27,7 +27,7 @@ static char rcsid[] = "$Id: main.c,v 1.53 2002/03/01 23:47:43 cssbz Exp $";
 #   endif
 #endif
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #include <stdio.h>
 #include <stdlib.h>

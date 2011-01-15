@@ -28,7 +28,7 @@ static char rcsid[] = "$Id: symbol.c,v 1.14 2001/08/02 16:26:11 cssbz Exp $";
 #include <string.h>
 #include <tk.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "error.h"
 #include "tree.h"
 #include "symbol.h"

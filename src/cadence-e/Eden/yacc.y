@@ -24,7 +24,7 @@ char *alloca ();
 
 static char rcsid[] = "$Id: yacc.y,v 1.19 2002/07/10 19:26:05 cssbz Exp $";
 
-#include "../config.h"
+#include "../../../config.h"
 #include <stdlib.h>
 
 #include "eden.h"

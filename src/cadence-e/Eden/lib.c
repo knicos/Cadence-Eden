@@ -21,7 +21,7 @@
 
 static char rcsid[] = "$Id: lib.c,v 1.7 2002/02/18 19:29:51 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "eden.h"
 #include "builtin.h"
 #include "yacc.h"

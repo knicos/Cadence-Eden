@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: tree.c,v 1.12 2001/08/02 16:26:11 cssbz Exp $";
 #include <string.h>
 #include <tk.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "tree.h"
 #include "symbol.h"
 #include "error.h"

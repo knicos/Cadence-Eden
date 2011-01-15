@@ -24,7 +24,7 @@ static char rcsid[] = "$Id: script.c,v 1.15 2002/03/01 23:39:40 cssbz Exp $";
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "script.h"
 
 #include "../Eden/emalloc.h"

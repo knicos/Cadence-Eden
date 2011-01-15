@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: lex.c,v 1.21 2002/03/01 23:37:56 cssbz Exp $";
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "tree.h"
 #include "parser.h"
 #include "../Eden/eden.h"

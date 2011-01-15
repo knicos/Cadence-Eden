@@ -21,7 +21,7 @@
 
 static char rcsid[] = "$Id: utility.c,v 1.8 2001/07/27 16:34:39 cssbz Exp $";
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "error.h"
 
 #include "../Eden/emalloc.h"

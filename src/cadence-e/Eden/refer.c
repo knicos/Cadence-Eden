@@ -27,7 +27,7 @@ static char rcsid[] = "$Id: refer.c,v 1.8 2001/07/27 17:52:39 cssbz Exp $";
 
 #include <stdlib.h>
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 #include "eden.h"
 #include "yacc.h"
 

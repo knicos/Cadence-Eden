@@ -26,7 +26,7 @@ static char rcsid[] = "$Id: curses.c,v 1.7 2001/07/27 16:42:42 cssbz Exp $";
  *		  INTO TRUE FUNCTIONS                    *
  *********************************************************/
 
-#include "../../../../../config.h"
+#include "../../../config.h"
 
 #if (defined(HAVE_CURSES) || defined(HAVE_NCURSES)) && defined(TTYEDEN)
 
